@@ -1,0 +1,246 @@
+import React from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Calendar, MapPin, Clock, Users, Plane, Home } from "lucide-react";
+
+export default function BookingStep1({ bookingData, updateBookingData, artist }) {
+  const timezones = [
+    "America/New_York",
+    "America/Los_Angeles",
+    "America/Chicago",
+    "Europe/London",
+    "Europe/Paris",
+    "Asia/Tokyo",
+    "Asia/Shanghai",
+    "Australia/Sydney"
+  ];
+
+  const currencies = ["USD", "EUR", "ILS"];
+
+  return (
+    <div className="space-y-8">
+      {/* Event Basic Info */}
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-blue-600" />
+            Event Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="event_date">Event Date *</Label>
+              <Input
+                id="event_date"
+                type="date"
+                value={bookingData.event_date}
+                onChange={(e) => updateBookingData('event_date', e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="event_time">Event Time *</Label>
+              <Input
+                id="event_time"
+                type="time"
+                value={bookingData.event_time}
+                onChange={(e) => updateBookingData('event_time', e.target.value)}
+                required
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="time_zone">Time Zone</Label>
+            <Select value={bookingData.time_zone} onValueChange={(value) => updateBookingData('time_zone', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select timezone" />
+              </SelectTrigger>
+              <SelectContent>
+                {timezones.map((tz) => (
+                  <SelectItem key={tz} value={tz}>{tz}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Budget */}
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <span className="text-green-600">$</span>
+            Budget
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="budget">Budget Amount *</Label>
+              <Input
+                id="budget"
+                type="number"
+                min={artist.minimum_booking_fee}
+                placeholder={`Minimum: ${artist.minimum_booking_fee}`}
+                value={bookingData.budget}
+                onChange={(e) => updateBookingData('budget', parseFloat(e.target.value))}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="currency">Currency</Label>
+              <Select value={bookingData.currency} onValueChange={(value) => updateBookingData('currency', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  {currencies.map((curr) => (
+                    <SelectItem key={curr} value={curr}>{curr}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Venue Information */}
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-red-600" />
+            Venue Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="venue_name">Venue Name *</Label>
+              <Input
+                id="venue_name"
+                value={bookingData.venue_name}
+                onChange={(e) => updateBookingData('venue_name', e.target.value)}
+                placeholder="Enter venue name"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="city">City *</Label>
+              <Input
+                id="city"
+                value={bookingData.city}
+                onChange={(e) => updateBookingData('city', e.target.value)}
+                placeholder="Enter city"
+                required
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="country">Country *</Label>
+              <Input
+                id="country"
+                value={bookingData.country}
+                onChange={(e) => updateBookingData('country', e.target.value)}
+                placeholder="Enter country"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="venue_address">Venue Address</Label>
+              <Input
+                id="venue_address"
+                value={bookingData.venue_address}
+                onChange={(e) => updateBookingData('venue_address', e.target.value)}
+                placeholder="Full venue address"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Performance Details */}
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="w-5 h-5 text-purple-600" />
+            Performance Details
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="performance_duration">Duration (minutes) *</Label>
+              <Input
+                id="performance_duration"
+                type="number"
+                min="15"
+                value={bookingData.performance_duration}
+                onChange={(e) => updateBookingData('performance_duration', parseInt(e.target.value))}
+                placeholder="e.g., 60"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="participant_count">Expected Participants *</Label>
+              <Input
+                id="participant_count"
+                type="number"
+                min="1"
+                value={bookingData.participant_count}
+                onChange={(e) => updateBookingData('participant_count', parseInt(e.target.value))}
+                placeholder="e.g., 100"
+                required
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Additional Services */}
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Plane className="w-5 h-5 text-orange-600" />
+            Additional Services
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Plane className="w-5 h-5 text-orange-600" />
+              <div>
+                <Label>Include Travel Expenses</Label>
+                <p className="text-sm text-gray-500">Flight, train, or bus transportation</p>
+              </div>
+            </div>
+            <Switch
+              checked={bookingData.includes_travel}
+              onCheckedChange={(checked) => updateBookingData('includes_travel', checked)}
+            />
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Home className="w-5 h-5 text-green-600" />
+              <div>
+                <Label>Include Accommodation</Label>
+                <p className="text-sm text-gray-500">Hotel or lodging arrangements</p>
+              </div>
+            </div>
+            <Switch
+              checked={bookingData.includes_accommodation}
+              onCheckedChange={(checked) => updateBookingData('includes_accommodation', checked)}
+            />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

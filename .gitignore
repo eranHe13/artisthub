@@ -28,10 +28,37 @@ env/
 ENV/
 .venv/
 .env/
+# Backend virtual environment
+backend/.venv/
+backend/venv/
+backend/env/
+
+# FastAPI specific
+backend/alembic/versions/*.py
+!backend/alembic/versions/__init__.py
+backend/alembic.ini
 
 # Database
 *.db
 *.sqlite3
+*.sqlite
+# Backend database files
+backend/*.db
+backend/*.sqlite3
+backend/app/*.db
+backend/app/*.sqlite3
+
+# Python cache and compiled files (backend specific)
+backend/__pycache__/
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/**/*.pyo
+backend/**/*.pyd
+
+# Logs (backend specific)
+backend/logs/
+backend/*.log
+backend/app/*.log
 
 # Node.js
 node_modules/
@@ -53,6 +80,11 @@ build/
 .env.development.local
 .env.test.local
 .env.production.local
+# Backend environment files
+backend/.env
+backend/.env.local
+backend/.env.production
+backend/.env.development
 
 # IDE files
 .vscode/

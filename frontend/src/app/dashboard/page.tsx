@@ -1,7 +1,6 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { useEffect } from "react";
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 
@@ -13,14 +12,12 @@ const MENU = [
   { key: "calendar", label: "Calendar" },
   { key: "earnings", label: "Earnings" },
   { key: "profile", label: "Profile" }
-  
 ];
 
 export default function DashboardPage() {
   const [section, setSection] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Responsive sidebar: close on menu click if <525px
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 600) setSidebarOpen(false);
@@ -36,7 +33,6 @@ export default function DashboardPage() {
     if (window.innerWidth < 600) setSidebarOpen(false);
   };
 
-  // Mock data for summary cards
   const summary = {
     totalRequests: 42,
     activeBookings: 8,
@@ -50,7 +46,7 @@ export default function DashboardPage() {
     avgFee: "$400",
     totalBookings: 32,
   };
-  // Expanded mock requests
+
   const [requests, setRequests] = useState([
     {
       id: 1,
@@ -146,8 +142,7 @@ export default function DashboardPage() {
       chat: [],
     },
   ]);
-  // Edit mode state
-  const [editId, setEditId] = useState<number|null>(null);
+  const [editId, setEditId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<any>({});
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
@@ -174,14 +169,10 @@ export default function DashboardPage() {
       </button>
       {/* Sidebar */}
       <aside
-        className={`fixed md:static z-50 top-0 left-0 h-full w-72 bg-[#232733] border-r border-gray-800 flex flex-col items-center py-10 px-6 shadow-lg transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed md:static z-50 top-0 left-0 h-full w-72 bg-[#232733] border-r border-gray-800 flex flex-col items-center py-10 px-6 shadow-lg transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
         style={{ minHeight: "100vh" }}
       >
-        {/*<Image src="/next.svg" alt="Site Logo" width={56} height={56} className="mb-4" />*/}
-        <div className="text-3xl font-extrabold tracking-tight mb-1 text-white">ArtistryHub 
-        <br></br>
-        </div>
-        
+        <div className="text-3xl font-extrabold tracking-tight mb-1 text-white">ArtistryHub <br /></div>
         <div className="text-2xl font-extrabold tracking-tight mb-1 text-white">Control Panel</div>
         <div className="text-sm text-gray-400 mb-6 text-center leading-tight">Manage bookings, earnings, and your profile</div>
         <hr className="w-full border-gray-700 mb-8" />
@@ -198,7 +189,7 @@ export default function DashboardPage() {
         </nav>
       </aside>
       {/* Overlay for mobile sidebar */}
-      {sidebarOpen && window.innerWidth < 600 && (
+      {sidebarOpen && typeof window !== 'undefined' && window.innerWidth < 600 && (
         <div className="fixed inset-0 z-30 bg-black/40" onClick={() => setSidebarOpen(false)} />
       )}
       {/* Main Content */}
@@ -231,7 +222,9 @@ export default function DashboardPage() {
                           <td className="py-3 pr-4 font-medium text-gray-900">{req.client}</td>
                           <td className="py-3 pr-4">{req.date}</td>
                           <td className="py-3 pr-4">
-                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${req.status === "Approved" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>{req.status}</span>
+                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${req.status === "Approved" ? "bg-green-100 text-green-700" : req.status === "Closed" ? "bg-gray-300 text-gray-700" : "bg-yellow-100 text-yellow-700"}`}>
+                              {req.status}
+                            </span>
                           </td>
                         </tr>
                       ))}
@@ -249,14 +242,16 @@ export default function DashboardPage() {
               {['All', 'Pending', 'Approved', 'Close'].map(tab => (
                 <button
                   key={tab}
-                  className={`px-6 py-2 rounded-full font-semibold text-base shadow-sm transition-colors duration-150 ${filter === tab ? 'bg-blue-600 text-white' : 'bg-[#232733] text-[#f0f0f0] border border-[#cccccc] hover:bg-[#2d3340]'}`}
+                  className={`px-6 py-2 rounded-full font-semibold text-base shadow-sm transition-colors duration-150 ${filter === tab ? 'bg-blue-600 text-white' : 'bg-[#232733] text-[#f0f0f0] border border-[#333] hover:bg-blue-700'}`}
                   onClick={() => setFilter(tab as any)}
                 >{tab}</button>
               ))}
             </div>
             <div className="grid grid-cols-1 gap-6 max-w-4xl">
               {requests.filter(r => filter === 'All' ? true : (filter === 'Close' ? r.status === 'Closed' : r.status === filter)).map(req => (
-                <div key={req.id} className="bg-[#232733] rounded-xl shadow-lg border border-[#cccccc]/40 p-6 flex items-center justify-between cursor-pointer hover:ring-2 hover:ring-blue-400 transition" onClick={() => setExpandedRequestId(req.id)}>
+                <div key={req.id} className="bg-[#232733] rounded-xl shadow-lg border border-[#cccccc]/40 p-6 flex items-center justify-between cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all"
+                  onClick={() => setExpandedRequestId(req.id)}
+                >
                   <div>
                     <div className="font-bold text-lg text-[#f0f0f0]">{req.client}</div>
                     <div className="text-[#cccccc] text-sm">{req.venue}</div>
@@ -273,87 +268,125 @@ export default function DashboardPage() {
               const req = requests.find(r => r.id === expandedRequestId);
               if (!req) return null;
               const isEditing = editId === req.id;
+
+              // Disable editing for Approved or Closed
+              const editable = req.status === "Pending";
+
+              // Always display status name in English
+              const statusDisplay = req.status;
+
               return (
-                <div className="fixed top-0 right-0 h-full w-full sm:w-[520px] bg-[#181c23] border-l border-[#cccccc] shadow-2xl z-50 flex flex-col transition-transform duration-300 animate-slide-in text-[#f0f0f0]">
+                <div className="fixed top-0 right-0 h-full w-full sm:w-[520px] bg-[#181c23] border-l border-[#cccccc] shadow-2xl z-50 flex flex-col transition-transform duration-300 animate-slide-in">
                   <button className="absolute top-4 right-4 text-[#cccccc] hover:text-white text-2xl" onClick={() => setExpandedRequestId(null)}>&times;</button>
                   <div className="p-8 overflow-y-auto flex-1">
                     <div className="font-bold text-2xl mb-4 text-white">{req.client} - {req.venue}</div>
                     <div className="mb-4 text-[#cccccc]">{req.date} | {req.budget}</div>
                     <div className="mb-6">
                       <div className="font-semibold text-lg mb-2 text-white">Status</div>
-                      <select
-                        className="bg-[#232733] border border-[#cccccc] rounded px-2 py-1 w-full text-[#f0f0f0] mb-2"
-                        value={editForm.status ?? req.status}
-                        onChange={e => {
-                          const newStatus = e.target.value;
-                          setEditForm((f: any) => ({ ...f, status: newStatus }));
-                          if (newStatus !== 'Pending') setEditId(null);
-                        }}
-                        disabled={req.status !== 'Pending'}
-                      >
-                        <option value="Pending">Pending</option>
-                        <option value="Approved">Approved</option>
-                        <option value="Closed">Closed</option>
-                      </select>
+                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold mb-3 ${req.status === "Approved" ? "bg-green-100 text-green-700" : req.status === "Closed" ? "bg-gray-300 text-gray-700" : "bg-yellow-100 text-yellow-700"}`}>
+                        {statusDisplay}
+                      </span>
+                      <div className="flex gap-3">
+                        {editable && req.status !== 'Approved' && (
+                          <button
+                            className="px-5 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-500"
+                            onClick={() => {
+                              setRequests(reqs => reqs.map(r => r.id === req.id ? { ...r, status: 'Approved' } : r));
+                              setExpandedRequestId(null);
+                            }}
+                          >Approve</button>
+                        )}
+                        {editable && req.status !== 'Closed' && (
+                          <button
+                            className="px-5 py-2 rounded-lg bg-red-700 text-white font-semibold shadow hover:bg-red-600"
+                            onClick={() => {
+                              setRequests(reqs => reqs.map(r => r.id === req.id ? { ...r, status: 'Closed' } : r));
+                              setExpandedRequestId(null);
+                            }}
+                          >Close</button>
+                        )}
+                      </div>
                     </div>
                     <div className="mb-6">
                       <div className="font-semibold text-lg mb-2 text-white">Client Information</div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-base">
-                        <div><span className="font-semibold text-[#cccccc]">Name:</span> {isEditing ? <input className="bg-[#232733] border border-[#cccccc] rounded px-2 py-1 w-full text-[#f0f0f0]" value={editForm.client ?? req.client} onChange={e=>setEditForm((f:any)=>({...f,client:e.target.value}))} /> : req.client}</div>
-                        <div><span className="font-semibold text-[#cccccc]">Email:</span> {isEditing ? <input className="bg-[#232733] border border-[#cccccc] rounded px-2 py-1 w-full text-[#f0f0f0]" value={editForm.email ?? req.email} onChange={e=>setEditForm((f:any)=>({...f,email:e.target.value}))} /> : req.email}</div>
-                        <div><span className="font-semibold text-[#cccccc]">Phone:</span> {isEditing ? <input className="bg-[#232733] border border-[#cccccc] rounded px-2 py-1 w-full text-[#f0f0f0]" value={editForm.phone ?? req.phone} onChange={e=>setEditForm((f:any)=>({...f,phone:e.target.value}))} /> : req.phone}</div>
-                        <div><span className="font-semibold text-[#cccccc]">Company:</span> {isEditing ? <input className="bg-[#232733] border border-[#cccccc] rounded px-2 py-1 w-full text-[#f0f0f0]" value={editForm.company ?? req.company} onChange={e=>setEditForm((f:any)=>({...f,company:e.target.value}))} /> : req.company}</div>
+                        <div><span className="font-semibold text-[#cccccc]">Name:</span> {req.client}</div>
+                        <div><span className="font-semibold text-[#cccccc]">Email:</span> {req.email}</div>
+                        <div><span className="font-semibold text-[#cccccc]">Phone:</span> {req.phone}</div>
+                        <div><span className="font-semibold text-[#cccccc]">Company:</span> {req.company}</div>
                       </div>
                     </div>
                     <div className="mb-6">
                       <div className="font-semibold text-lg mb-2 text-white">Event Details</div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-base">
-                        {isEditing && (editForm.status ?? req.status) === 'Pending' ? (
-                          // Render editable fields for Date & Time, Duration, Price
-                          <>
-                            <div><span className="font-semibold text-[#cccccc]">Date & Time:</span> <input className="bg-[#232733] border border-[#cccccc] rounded px-2 py-1 w-full text-[#f0f0f0]" value={editForm.date ?? req.date} onChange={e=>setEditForm((f:any)=>({...f,date:e.target.value}))} /></div>
-                            <div><span className="font-semibold text-[#cccccc]">Duration:</span> <input className="bg-[#232733] border border-[#cccccc] rounded px-2 py-1 w-full text-[#f0f0f0]" value={editForm.duration ?? req.duration} onChange={e=>setEditForm((f:any)=>({...f,duration:e.target.value}))} /></div>
-                            <div><span className="font-semibold text-[#cccccc]">Price:</span> <input className="bg-[#232733] border border-[#cccccc] rounded px-2 py-1 w-full text-[#f0f0f0]" value={editForm.budget ?? req.budget} onChange={e=>setEditForm((f:any)=>({...f,budget:e.target.value}))} /></div>
-                          </>
-                        ) : (
-                          // Render non-editable fields
-                          <>
-                            <div><span className="font-semibold text-[#cccccc]">Date & Time:</span> {req.date}</div>
-                            <div><span className="font-semibold text-[#cccccc]">Duration:</span> {req.duration}</div>
-                            <div><span className="font-semibold text-[#cccccc]">Price:</span> {req.budget}</div>
-                          </>
-                        )}
-                        <div><span className="font-semibold text-[#cccccc]">Venue:</span> {isEditing ? <input className="bg-[#232733] border border-[#cccccc] rounded px-2 py-1 w-full text-[#f0f0f0]" value={editForm.venue ?? req.venue} onChange={e=>setEditForm((f:any)=>({...f,venue:e.target.value}))} /> : req.venue}</div>
-                        <div><span className="font-semibold text-[#cccccc]">Location:</span> {isEditing ? <input className="bg-[#232733] border border-[#cccccc] rounded px-2 py-1 w-full text-[#f0f0f0]" value={editForm.location ?? req.location} onChange={e=>setEditForm((f:any)=>({...f,location:e.target.value}))} /> : req.location}</div>
+                        <div>
+                          <span className="font-semibold text-[#cccccc]">Date & Time:</span>
+                          {isEditing && editable ? (
+                            <input
+                              className="bg-[#232733] border border-[#cccccc] rounded px-2 py-1 w-full text-[#f0f0f0] mt-1"
+                              value={editForm.date}
+                              onChange={e => setEditForm((f: any) => ({ ...f, date: e.target.value }))}
+                            />
+                          ) : (
+                            <span className="ml-2">{req.date}</span>
+                          )}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-[#cccccc]">Duration:</span>
+                          {isEditing && editable ? (
+                            <input
+                              className="bg-[#232733] border border-[#cccccc] rounded px-2 py-1 w-full text-[#f0f0f0] mt-1"
+                              value={editForm.duration}
+                              onChange={e => setEditForm((f: any) => ({ ...f, duration: e.target.value }))}
+                            />
+                          ) : (
+                            <span className="ml-2">{req.duration}</span>
+                          )}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-[#cccccc]">Price:</span>
+                          {isEditing && editable ? (
+                            <input
+                              className="bg-[#232733] border border-[#cccccc] rounded px-2 py-1 w-full text-[#f0f0f0] mt-1"
+                              value={editForm.budget}
+                              onChange={e => setEditForm((f: any) => ({ ...f, budget: e.target.value }))}
+                            />
+                          ) : (
+                            <span className="ml-2">{req.budget}</span>
+                          )}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-[#cccccc]">Venue:</span> {req.venue}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-[#cccccc]">Location:</span> {req.location}
+                        </div>
                       </div>
                     </div>
                     <div className="mb-6">
                       <div className="font-semibold text-lg mb-2 text-white">Financial Info</div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-base">
-                        <div><span className="font-semibold text-[#cccccc]">Offered Budget:</span> {isEditing ? <input className="bg-[#232733] border border-[#cccccc] rounded px-2 py-1 w-full text-[#f0f0f0]" value={editForm.budget ?? req.budget} onChange={e=>setEditForm((f:any)=>({...f,budget:e.target.value}))} /> : req.budget}</div>
-                        <div><span className="font-semibold text-[#cccccc]">Includes Travel:</span> {isEditing ? <input className="bg-[#232733] border border-[#cccccc] rounded px-2 py-1 w-full text-[#f0f0f0]" value={editForm.travel ?? req.travel} onChange={e=>setEditForm((f:any)=>({...f,travel:e.target.value}))} /> : req.travel}</div>
-                        <div><span className="font-semibold text-[#cccccc]">Includes Accommodation:</span> {isEditing ? <input className="bg-[#232733] border border-[#cccccc] rounded px-2 py-1 w-full text-[#f0f0f0]" value={editForm.accommodation ?? req.accommodation} onChange={e=>setEditForm((f:any)=>({...f,accommodation:e.target.value}))} /> : req.accommodation}</div>
-                        <div className="sm:col-span-2"><span className="font-semibold text-[#cccccc]">Client Message:</span> {isEditing ? <textarea className="bg-[#232733] border border-[#cccccc] rounded px-2 py-1 w-full text-[#f0f0f0]" value={editForm.message ?? req.message} onChange={e=>setEditForm((f:any)=>({...f,message:e.target.value}))} /> : req.message}</div>
+                        <div><span className="font-semibold text-[#cccccc]">Offered Budget:</span> {req.budget}</div>
+                        <div><span className="font-semibold text-[#cccccc]">Includes Travel:</span> {req.travel}</div>
+                        <div><span className="font-semibold text-[#cccccc]">Includes Accommodation:</span> {req.accommodation}</div>
+                        <div className="sm:col-span-2"><span className="font-semibold text-[#cccccc]">Client Message:</span> {req.message}</div>
                       </div>
                     </div>
-                    {/* Chat and actions can go here */}
                     <div className="flex gap-2 mt-6">
-                      {isEditing ? (
+                      {isEditing && editable ? (
                         <>
-                          <button className="px-5 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-500" onClick={e=>{
+                          <button className="px-5 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-500" onClick={e => {
                             e.preventDefault();
-                            setRequests(reqs=>reqs.map(r=>r.id===req.id?{...r,...editForm}:r));
+                            setRequests(reqs => reqs.map(r => r.id === req.id ? { ...r, ...editForm } : r));
                             setEditId(null);
                             setEditForm({});
                           }}>Save</button>
-                          <button className="px-5 py-2 rounded-lg bg-gray-700 text-[#f0f0f0] font-semibold shadow hover:bg-gray-600" onClick={e=>{e.preventDefault();setEditId(null);setEditForm({});}}>Cancel</button>
+                          <button className="px-5 py-2 rounded-lg bg-gray-700 text-[#f0f0f0] font-semibold shadow hover:bg-gray-600" onClick={e => { e.preventDefault(); setEditId(null); setEditForm({}); }}>Cancel</button>
                         </>
                       ) : (
-                        <>
-                          <button className="px-5 py-2 rounded-lg bg-blue-600 text-white font-semibold shadow hover:bg-blue-500" onClick={e=>{e.preventDefault();setEditId(req.id);setEditForm(req);}}>Edit</button>
-                        </>
+                        editable &&
+                        <button className="px-5 py-2 rounded-lg bg-blue-600 text-white font-semibold shadow hover:bg-blue-500" onClick={e => { e.preventDefault(); setEditId(req.id); setEditForm(req); }}>Edit</button>
                       )}
-                      <button className="px-5 py-2 rounded-lg bg-red-700 text-white font-semibold shadow hover:bg-red-600" onClick={() => {/* close event logic */}}>Close Event</button>
                     </div>
                   </div>
                 </div>
@@ -530,7 +563,7 @@ export default function DashboardPage() {
                   if (view === 'month') {
                     const event = calendarEvents.find(ev => ev.date.toDateString() === date.toDateString());
                     if (event) {
-                      return <span className={`block w-2 h-2 rounded-full mt-1 mx-auto ${event.status === 'Approved' ? 'bg-green-400' : event.status === 'Pending' ? 'bg-yellow-400' : 'bg-gray-400'}`}></span>;
+                      return <span className={`block w-2 h-2 rounded-full mt-1 mx-auto ${event.status === 'Approved' ? 'bg-green-400' : event.status === 'Pending' ? 'bg-yellow-400' : 'bg-gray-400'}`}></span>
                     }
                   }
                   return null;
@@ -555,4 +588,4 @@ function SummaryCard({ label, value, icon }: { label: string; value: string | nu
       <div className="text-xs text-gray-400 font-semibold tracking-wide uppercase">{label}</div>
     </div>
   );
-} 
+}

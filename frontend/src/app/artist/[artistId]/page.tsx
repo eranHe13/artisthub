@@ -1,7 +1,7 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { User as UserIcon, Music, Link as LinkIcon } from "lucide-react";
+import { User as UserIcon, Music, Link as LinkIcon, LogOut } from "lucide-react";
 
 // SVG icons for music platforms
 const SpotifyIcon = () => (
@@ -35,8 +35,57 @@ const artist = {
 };
 
 export default function ArtistProfilePage() {
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    // Check if user is logged in
+    const savedUser = localStorage.getItem('artisthub_user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('artisthub_user');
+    setUser(null);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 p-6 relative">
+      {/* Login/User Button - Top Right */}
+      <div className="absolute top-6 right-6 z-10">
+        {user ? (
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 bg-gray-800 px-4 py-2 rounded-lg border border-gray-700">
+              <img 
+                src={user.picture} 
+                alt={user.name}
+                className="w-6 h-6 rounded-full"
+              />
+              <span className="text-white text-sm font-medium">{user.name}</span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg shadow-lg transition-all duration-200"
+              title="התנתק"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <a 
+            href="/login"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-lg transition-all duration-200 text-sm flex items-center gap-2"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M15 3H19C20.1046 3 21 3.89543 21 21 19 21H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M10 17L15 12L10 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M15 12H3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            התחבר
+          </a>
+        )}
+      </div>
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-4">
         {/* Left: Main Content */}
         <div className="flex flex-col gap-4 items-center">

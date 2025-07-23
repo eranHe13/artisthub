@@ -51,7 +51,7 @@ export default function BookingSubmitPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-12 px-2 flex flex-col items-center">
       <div className="max-w-2xl w-full">
         <button className="mb-4 px-4 py-2 bg-gray-100 rounded" onClick={handlePrev} disabled={step === 1}>&lt; Back</button>
-        <h1 className="text-3xl font-bold text-center mb-2">Book DJ Eran</h1>
+        <h1 className="text-3xl font-bold text-center mb-2 !text-black">Book DJ Eran</h1>
         <p className="text-center mb-8 text-gray-600">Complete the booking process to request this artist for your event</p>
         {/* Progress Steps */}
         <div className="flex justify-center mb-8 gap-8">
@@ -76,17 +76,18 @@ export default function BookingSubmitPage() {
                   <div className="font-semibold mb-2 flex items-center gap-2"><span>📅</span> Event Information</div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-1">Event Date *</label>
-                      <input type="date" className="w-full border rounded px-2 py-1" value={form.event_date} onChange={e=>handleChange('event_date',e.target.value)} required />
+                      <label className="block text-sm font-medium mb-1 !text-black">Event Date *</label>
+                      
+                      <input type="date" className="w-full !border-2 !border-black rounded px-2 py-1 !bg-white !text-black " value={form.event_date} onChange={e=>handleChange('event_date',e.target.value)} required />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">Event Time *</label>
-                      <input type="time" className="w-full border rounded px-2 py-1 " value={form.event_time} onChange={e=>handleChange('event_time',e.target.value)} required />
+                      <label className="block text-sm font-medium mb-1 !text-black">Event Time *</label>
+                      <input type="time" className="w-full !border-2 !border-black rounded px-2 py-1 !bg-white !text-black " value={form.event_time} onChange={e=>handleChange('event_time',e.target.value)} required />
                     </div>
                   </div>
                   <div className="mt-4">
-                    <label className="block text-sm font-medium mb-1">Time Zone</label>
-                    <select className="w-full border rounded px-2 py-1" value={form.time_zone} onChange={e=>handleChange('time_zone',e.target.value)}>
+                    <label className="block text-sm font-medium mb-1 !text-black">Time Zone</label>
+                    <select className="w-full !border-2 !border-black rounded px-2 py-1 !bg-white !text-black" value={form.time_zone} onChange={e=>handleChange('time_zone',e.target.value)}>
                       <option value="">Select timezone</option>
                       {timezones.map(tz => <option key={tz} value={tz}>{tz}</option>)}
                     </select>
@@ -97,12 +98,12 @@ export default function BookingSubmitPage() {
                   <div className="font-semibold mb-2 flex items-center gap-2"><span className="text-green-600">$</span> Budget</div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-1">Budget Amount *</label>
-                      <input type="number" className="w-full border rounded px-2 py-1 bg-white text-black" value={form.budget} onChange={e=>handleChange('budget',e.target.value)} required />
+                      <label className="block text-sm font-medium mb-1 !text-black">Budget Amount *</label>
+                      <input type="number" className="w-full !border-2 !border-black rounded px-2 py-1 !bg-white !text-black bg-white text-black" value={form.budget} onChange={e=>handleChange('budget',e.target.value)} required />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">Currency</label>
-                      <select className="w-full border rounded px-2 py-1" value={form.currency} onChange={e=>handleChange('currency',e.target.value)}>
+                      <label className="block text-sm font-medium mb-1 !text-black">Currency</label>
+                      <select className="w-full !border-2 !border-black rounded px-2 py-1 !bg-white !text-black" value={form.currency} onChange={e=>handleChange('currency',e.target.value)}>
                         {currencies.map(curr => <option key={curr} value={curr}>{curr}</option>)}
                       </select>
                     </div>
@@ -113,22 +114,22 @@ export default function BookingSubmitPage() {
                   <div className="font-semibold mb-2 flex items-center gap-2"><span>📍</span> Venue Information</div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-1">Venue Name *</label>
-                      <input className="w-full border rounded px-2 py-1" value={form.venue_name} onChange={e=>handleChange('venue_name',e.target.value)} required />
+                      <label className="block text-sm font-medium mb-1 !text-black">Venue Name *</label>
+                      <input className="w-full !border-2 !border-black rounded px-2 py-1 !bg-white !text-black" value={form.venue_name} onChange={e=>handleChange('venue_name',e.target.value)} required />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">City *</label>
-                      <input className="w-full border rounded px-2 py-1" value={form.city} onChange={e=>handleChange('city',e.target.value)} required />
+                      <label className="block text-sm font-medium mb-1 !text-black">City *</label>
+                      <input className="w-full !border-2 !border-black rounded px-2 py-1 !bg-white !text-black" value={form.city} onChange={e=>handleChange('city',e.target.value)} required />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
-                      <label className="block text-sm font-medium mb-1">Country *</label>
-                      <input className="w-full border rounded px-2 py-1" value={form.country} onChange={e=>handleChange('country',e.target.value)} required />
+                      <label className="block text-sm font-medium mb-1 !text-black">Country *</label>
+                      <input className="w-full !border-2 !border-black rounded px-2 py-1 !bg-white !text-black" value={form.country} onChange={e=>handleChange('country',e.target.value)} required />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">Venue Address</label>
-                      <input className="w-full border rounded px-2 py-1" value={form.venue_address} onChange={e=>handleChange('venue_address',e.target.value)} />
+                      <label className="block text-sm font-medium mb-1 !text-black">Venue Address</label>
+                      <input className="w-full !border-2 !border-black rounded px-2 py-1 !bg-white !text-black" value={form.venue_address} onChange={e=>handleChange('venue_address',e.target.value)} />
                     </div>
                   </div>
                 </div>
@@ -137,12 +138,12 @@ export default function BookingSubmitPage() {
                   <div className="font-semibold mb-2 flex items-center gap-2"><span>⏱️</span> Performance Details</div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-1">Duration (minutes) *</label>
-                      <input type="number" className="w-full border rounded px-2 py-1" value={form.performance_duration} onChange={e=>handleChange('performance_duration',e.target.value)} required />
+                      <label className="block text-sm font-medium mb-1 !text-black">Duration (minutes) *</label>
+                      <input type="number" className="w-full !border-2 !border-black rounded px-2 py-1 !bg-white !text-black" value={form.performance_duration} onChange={e=>handleChange('performance_duration',e.target.value)} required />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">Expected Participants *</label>
-                      <input type="number" className="w-full border rounded px-2 py-1" value={form.participant_count} onChange={e=>handleChange('participant_count',e.target.value)} required />
+                      <label className="block text-sm font-medium mb-1 !text-black">Expected Participants *</label>
+                      <input type="number" className="w-full !border-2 !border-black rounded px-2 py-1 !bg-white !text-black" value={form.participant_count} onChange={e=>handleChange('participant_count',e.target.value)} required />
                     </div>
                   </div>
                 </div>
@@ -183,33 +184,33 @@ export default function BookingSubmitPage() {
                   <div className="font-semibold mb-2 flex items-center gap-2"><span>👤</span> Contact Information</div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-1">First Name *</label>
-                      <input className="w-full border rounded px-2 py-1" value={form.client_first_name} onChange={e=>handleChange('client_first_name',e.target.value)} required />
+                      <label className="block text-sm font-medium mb-1 !text-black">First Name *</label>
+                      <input className="w-full !border-2 !border-black rounded px-2 py-1 !bg-white !text-black" value={form.client_first_name} onChange={e=>handleChange('client_first_name',e.target.value)} required />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">Last Name *</label>
-                      <input className="w-full border rounded px-2 py-1" value={form.client_last_name} onChange={e=>handleChange('client_last_name',e.target.value)} required />
+                      <label className="block text-sm font-medium mb-1 !text-black">Last Name *</label>
+                      <input className="w-full !border-2 !border-black rounded px-2 py-1 !bg-white !text-black" value={form.client_last_name} onChange={e=>handleChange('client_last_name',e.target.value)} required />
                     </div>
                   </div>
                   <div className="mt-4">
-                    <label className="block text-sm font-medium mb-1">Company Name (Optional)</label>
-                    <input className="w-full border rounded px-2 py-1" value={form.client_company} onChange={e=>handleChange('client_company',e.target.value)} />
+                    <label className="block text-sm font-medium mb-1 !text-black">Company Name (Optional)</label>
+                    <input className="w-full !border-2 !border-black rounded px-2 py-1 !bg-white !text-black" value={form.client_company} onChange={e=>handleChange('client_company',e.target.value)} />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
-                      <label className="block text-sm font-medium mb-1">Email Address *</label>
-                      <input type="email" className="w-full border rounded px-2 py-1" value={form.client_email} onChange={e=>handleChange('client_email',e.target.value)} required />
+                      <label className="block text-sm font-medium mb-1 !text-black">Email Address *</label>
+                      <input type="email" className="w-full !border-2 !border-black rounded px-2 py-1 !bg-white !text-black" value={form.client_email} onChange={e=>handleChange('client_email',e.target.value)} required />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">Phone Number *</label>
-                      <input type="tel" className="w-full border rounded px-2 py-1" value={form.client_phone} onChange={e=>handleChange('client_phone',e.target.value)} required />
+                      <label className="block text-sm font-medium mb-1 !text-black">Phone Number *</label>
+                      <input type="tel" className="w-full !border-2 !border-black rounded px-2 py-1 !bg-white !text-black" value={form.client_phone} onChange={e=>handleChange('client_phone',e.target.value)} required />
                     </div>
                   </div>
                 </div>
                 {/* Message to Artist */}
                 <div className="mb-6">
                   <div className="font-semibold mb-2 flex items-center gap-2"><span>💬</span> Message to Artist</div>
-                  <textarea className="w-full border rounded px-2 py-1 min-h-24" value={form.client_message} onChange={e=>handleChange('client_message',e.target.value)} placeholder="Tell the artist more about your event, special requirements, or any questions you have..." />
+                  <textarea className="w-full !border-2 !border-black rounded px-2 py-1 !bg-white !text-black min-h-24" value={form.client_message} onChange={e=>handleChange('client_message',e.target.value)} placeholder="Tell the artist more about your event, special requirements, or any questions you have..." />
                   <div className="text-xs text-gray-500 mt-1">This message will be sent directly to the artist along with your booking request.</div>
                 </div>
                 {/* Summary */}

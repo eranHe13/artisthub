@@ -50,7 +50,7 @@ export default function BookingSubmitPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-12 px-2 flex flex-col items-center">
       <div className="max-w-2xl w-full">
-        <button className="mb-4 px-4 py-2 bg-gray-100 rounded" onClick={handlePrev} disabled={step === 1}>&lt; Back</button>
+        <button className="mb-4 px-4 py-2 bg-black-100 rounded !text-black !border-black" onClick={handlePrev} disabled={step === 1}>&lt; Back</button>
         <h1 className="text-3xl font-bold text-center mb-2 !text-black">Book DJ Eran</h1>
         <p className="text-center mb-8 text-gray-600">Complete the booking process to request this artist for your event</p>
         {/* Progress Steps */}
@@ -64,7 +64,7 @@ export default function BookingSubmitPage() {
         </div>
         <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-2xl">
           <CardHeader className="p-8 border-b">
-            <CardTitle className="text-2xl font-bold text-center">
+            <CardTitle className="text-2xl font-bold text-center text-black">
               {step === 1 ? "Event Details" : step === 2 ? "Your Information" : "Confirmation"}
             </CardTitle>
           </CardHeader>

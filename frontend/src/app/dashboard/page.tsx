@@ -17,6 +17,21 @@ const MENU = [
 export default function DashboardPage() {
   const [section, setSection] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [artistProfile, setArtistProfile] = useState<any>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    stage_name: "",
+    bio: "",
+    genres: "",
+    min_price: 1000,
+    instagram: "",
+    twitter: "",
+    facebook: "",
+    youtube: "",
+    soundcloud: "",
+    spotify: "",
+    bandcamp: ""
+  });
 
   useEffect(() => {
     const handleResize = () => {
@@ -27,6 +42,119 @@ export default function DashboardPage() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // Load profile on component mount
+  useEffect(() => {
+    fetchArtistProfile();
+  }, []);
+
+  // Update form when profile is loaded
+  useEffect(() => {
+    if (artistProfile && section === "profile") {
+      // Update profile image if available
+      if (artistProfile.photo) {
+        setProfileImage(artistProfile.photo);
+      }
+      
+      // Update form data
+      const socialLinks = parseSocialLinks(artistProfile.social_links || "{}");
+      setFormData({
+        stage_name: artistProfile.stage_name || "",
+        bio: artistProfile.bio || "",
+        genres: artistProfile.genres || "",
+        min_price: artistProfile.min_price || 1000,
+        instagram: socialLinks.instagram || "",
+        twitter: socialLinks.twitter || "",
+        facebook: socialLinks.facebook || "",
+        youtube: socialLinks.youtube || "",
+        soundcloud: socialLinks.soundcloud || "",
+        spotify: socialLinks.spotify || "",
+        bandcamp: socialLinks.bandcamp || ""
+      });
+    }
+  }, [artistProfile, section]);
+
+  // useEffect(() => {
+  //   // Load profile when dashboard opens or when switching to profile section
+  //   if (section === "profile") {
+  //     fetchArtistProfile();
+  //   }
+  // }, [section, artistProfile]);
+
+  const fetchArtistProfile = async () => {
+    try {
+      setProfileLoading(true);
+      const response = await fetch('/api/artist/me', {
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        const profile = await response.json();
+        setArtistProfile(profile);
+        // Set profile image if available
+        if (profile.photo) {
+          setProfileImage(profile.photo);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching artist profile:', err);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  // Helper function to safely parse JSON
+  const parseSocialLinks = (socialLinksString: string) => {
+    try {
+      return JSON.parse(socialLinksString);
+    } catch {
+      return {};
+    }
+  };
+
+  const handleProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const socialLinks = {
+        instagram: formData.instagram,
+        twitter: formData.twitter,
+        facebook: formData.facebook,
+        youtube: formData.youtube,
+        soundcloud: formData.soundcloud,
+        spotify: formData.spotify,
+        bandcamp: formData.bandcamp,
+      };
+
+      const profileData = {
+        stage_name: formData.stage_name,
+        bio: formData.bio,
+        genres: formData.genres,
+        social_links: socialLinks,
+        min_price: formData.min_price,
+        photo: artistProfile?.photo || "",
+      };
+
+      const response = await fetch('/api/artist/me', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(profileData),
+      });
+
+      if (response.ok) {
+        alert('Profile updated successfully!');
+        fetchArtistProfile(); // Refresh the profile data
+      } else {
+        alert('Failed to update profile');
+      }
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      alert('Error updating profile');
+    }
+  };
 
   const handleMenuClick = (key: string) => {
     setSection(key);
@@ -177,6 +305,12 @@ export default function DashboardPage() {
         <div className="text-sm text-gray-400 mb-6 text-center leading-tight">Manage bookings, earnings, and your profile</div>
         <hr className="w-full border-gray-700 mb-8" />
         <nav className="flex flex-col gap-2 w-full">
+          <a
+            href={`/artist/${artistProfile?.user_id || 1}`}
+            className="text-left px-5 py-3 rounded-lg font-semibold text-base transition-all duration-150 bg-green-600 text-white shadow hover:bg-green-500"
+          >
+            View Artist Page
+          </a>
           {MENU.map((item) => (
             <button
               key={item.key}
@@ -444,7 +578,13 @@ export default function DashboardPage() {
         {section === "profile" && (
           <div>
             <h1 className="text-3xl font-extrabold mb-10 tracking-tight text-gray-100">Edit Profile</h1>
-            <form className="bg-[#232733] rounded-2xl shadow-lg border border-gray-800 p-10 max-w-2xl flex flex-col gap-8">
+            {profileLoading ? (
+              <div className="bg-[#232733] rounded-2xl shadow-lg border border-gray-800 p-10 max-w-2xl flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <span className="ml-3 text-white">Loading profile...</span>
+              </div>
+            ) : (
+              <form onSubmit={handleProfileSubmit} className="bg-[#232733] rounded-2xl shadow-lg border border-gray-800 p-10 max-w-2xl flex flex-col gap-8">
               <div className="flex flex-col items-center gap-4 mb-6">
                 <div className="w-28 h-28 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden border-4 border-gray-800">
                   {profileImage ? (
@@ -472,20 +612,43 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
                     <label className="block font-semibold mb-1 text-white-700">Artist/DJ Name</label>
-                    <input className="w-full border rounded-lg px-4 py-2 text-base" placeholder="Artist Name" />
+                    <input 
+                      className="w-full border rounded-lg px-4 py-2 text-base" 
+                      placeholder="Artist Name" 
+                      value={formData.stage_name}
+                      onChange={(e) => setFormData({...formData, stage_name: e.target.value})}
+                      name="stage_name"
+                    />
                   </div>
                   <div>
                     <label className="block font-semibold mb-1 text-white-700">Location</label>
-                    <input className="w-full border rounded-lg px-4 py-2 text-base" placeholder="Location" />
+                    <input 
+                      className="w-full border rounded-lg px-4 py-2 text-base" 
+                      placeholder="Location" 
+                      defaultValue="Tel Aviv, Israel"
+                      name="location"
+                    />
                   </div>
                 </div>
                 <div className="mt-6">
                   <label className="block font-semibold mb-1 text-white-700">Bio / Description</label>
-                  <textarea className="w-full border rounded-lg px-4 py-2 text-base min-h-24" placeholder="Bio or description" />
+                  <textarea 
+                    className="w-full border rounded-lg px-4 py-2 text-base min-h-24" 
+                    placeholder="Bio or description" 
+                    value={formData.bio}
+                    onChange={(e) => setFormData({...formData, bio: e.target.value})}
+                    name="bio"
+                  />
                 </div>
                 <div className="mt-6">
                   <label className="block font-semibold mb-1 text-white-700">Genres (comma-separated)</label>
-                  <input className="w-full border rounded-lg px-4 py-2 text-base" placeholder="House, Techno, EDM" />
+                  <input 
+                    className="w-full border rounded-lg px-4 py-2 text-base" 
+                    placeholder="House, Techno, EDM" 
+                    value={formData.genres}
+                    onChange={(e) => setFormData({...formData, genres: e.target.value})}
+                    name="genres"
+                  />
                 </div>
               </div>
               {/* Booking & Media */}
@@ -494,11 +657,23 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
                     <label className="block font-semibold mb-1 text-white-700">Minimum Booking Fee</label>
-                    <input className="w-full border rounded-lg px-4 py-2 text-base" type="number" placeholder="$1000" />
+                    <input 
+                      className="w-full border rounded-lg px-4 py-2 text-base" 
+                      type="number" 
+                      placeholder="$1000" 
+                      value={formData.min_price}
+                      onChange={(e) => setFormData({...formData, min_price: parseFloat(e.target.value) || 1000})}
+                      name="min_price"
+                    />
                   </div>
                   <div>
                     <label className="block font-semibold mb-1 text-white-700">Currency</label>
-                    <input className="w-full border rounded-lg px-4 py-2 text-base" placeholder="USD" />
+                    <input 
+                      className="w-full border rounded-lg px-4 py-2 text-base" 
+                      placeholder="USD" 
+                      defaultValue="USD"
+                      name="currency"
+                    />
                   </div>
                 </div>
               </div>
@@ -508,15 +683,33 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
                     <label className="block font-semibold mb-1 text-white-700">Instagram URL</label>
-                    <input className="w-full border rounded-lg px-4 py-2 text-base" placeholder="https://instagram.com/yourprofile" />
+                    <input 
+                      className="w-full border rounded-lg px-4 py-2 text-base" 
+                      placeholder="https://instagram.com/yourprofile" 
+                      value={formData.instagram}
+                      onChange={(e) => setFormData({...formData, instagram: e.target.value})}
+                      name="instagram"
+                    />
                   </div>
                   <div>
                     <label className="block font-semibold mb-1 text-white-700">Twitter URL</label>
-                    <input className="w-full border rounded-lg px-4 py-2 text-base" placeholder="https://twitter.com/yourprofile" />
+                    <input 
+                      className="w-full border rounded-lg px-4 py-2 text-base" 
+                      placeholder="https://twitter.com/yourprofile" 
+                      value={formData.twitter}
+                      onChange={(e) => setFormData({...formData, twitter: e.target.value})}
+                      name="twitter"
+                    />
                   </div>
                   <div>
                     <label className="block font-semibold mb-1 text-white-700">Facebook URL</label>
-                    <input className="w-full border rounded-lg px-4 py-2 text-base" placeholder="https://facebook.com/yourprofile" />
+                    <input 
+                      className="w-full border rounded-lg px-4 py-2 text-base" 
+                      placeholder="https://facebook.com/yourprofile" 
+                      value={formData.facebook}
+                      onChange={(e) => setFormData({...formData, facebook: e.target.value})}
+                      name="facebook"
+                    />
                   </div>
                 </div>
               </div>
@@ -526,19 +719,43 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
                     <label className="block font-semibold mb-1 text-white-700">YouTube URL</label>
-                    <input className="w-full border rounded-lg px-4 py-2 text-base" placeholder="https://youtube.com/yourchannel" />
+                    <input 
+                      className="w-full border rounded-lg px-4 py-2 text-base" 
+                      placeholder="https://youtube.com/yourchannel" 
+                      value={formData.youtube}
+                      onChange={(e) => setFormData({...formData, youtube: e.target.value})}
+                      name="youtube"
+                    />
                   </div>
                   <div>
                     <label className="block font-semibold mb-1 text-white-700">SoundCloud URL</label>
-                    <input className="w-full border rounded-lg px-4 py-2 text-base" placeholder="https://soundcloud.com/yourprofile" />
+                    <input 
+                      className="w-full border rounded-lg px-4 py-2 text-base" 
+                      placeholder="https://soundcloud.com/yourprofile" 
+                      value={formData.soundcloud}
+                      onChange={(e) => setFormData({...formData, soundcloud: e.target.value})}
+                      name="soundcloud"
+                    />
                   </div>
                   <div>
                     <label className="block font-semibold mb-1 text-white-700">Spotify URL</label>
-                    <input className="w-full border rounded-lg px-4 py-2 text-base" placeholder="https://spotify.com/yourprofile" />
+                    <input 
+                      className="w-full border rounded-lg px-4 py-2 text-base" 
+                      placeholder="https://spotify.com/yourprofile" 
+                      value={formData.spotify}
+                      onChange={(e) => setFormData({...formData, spotify: e.target.value})}
+                      name="spotify"
+                    />
                   </div>
                   <div>
                     <label className="block font-semibold mb-1 text-white-700">Bandcamp URL</label>
-                    <input className="w-full border rounded-lg px-4 py-2 text-base" placeholder="https://bandcamp.com/yourprofile" />
+                    <input 
+                      className="w-full border rounded-lg px-4 py-2 text-base" 
+                      placeholder="https://bandcamp.com/yourprofile" 
+                      value={formData.bandcamp}
+                      onChange={(e) => setFormData({...formData, bandcamp: e.target.value})}
+                      name="bandcamp"
+                    />
                   </div>
                 </div>
               </div>
@@ -546,6 +763,7 @@ export default function DashboardPage() {
                 <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-3 rounded-xl font-bold text-lg shadow-lg">Save</button>
               </div>
             </form>
+            )}
           </div>
         )}
         {section === "calendar" && (

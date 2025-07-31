@@ -86,6 +86,20 @@ backend/.env.local
 backend/.env.production
 backend/.env.development
 
+# Backend temporary files
+backend/temp/
+backend/tmp/
+backend/uploads/
+backend/media/
+
+# Backend testing
+backend/test_*.py
+backend/**/test_*.py
+backend/pytest_cache/
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+
 # IDE files
 .vscode/
 .idea/
@@ -113,3 +127,11 @@ coverage/
 
 .others/
 .tree.txt
+.venv/
+
+.nginx.conf
+.SECURITY_DEPLOYMENT_GUIDE.md
+.setup-ssl.sh
+.test.py
+.test11.db
+.view_only.db

@@ -18,14 +18,13 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
-      const user = await signInWithGoogle();
-      // Save user to localStorage (handled by auth context)
-      localStorage.setItem('artisthub_user', JSON.stringify(user));
-      // Redirect to artist page
-      window.location.href = "/artist/1";
+      await signInWithGoogle();
+      console.log("Login successful");
+      
+      // signInWithGoogle will redirect to Google OAuth - no localStorage needed
+      // After OAuth success, user will be redirected back with secure cookie set
     } catch (error) {
       console.error("Login failed:", error);
-    } finally {
       setIsLoading(false);
     }
   };

@@ -3,9 +3,13 @@ uvicorn[standard]
 sqlalchemy
 alembic
 psycopg2-binary
-pydantic
+pydantic[email]
 python-jose[cryptography]
 passlib[bcrypt]
 python-multipart
 pillow
 redis
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+requests

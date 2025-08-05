@@ -281,6 +281,7 @@ export default function DashboardPage() {
     totalBookings: 0
   });
   const [formData, setFormData] = useState({
+    profile_image: "",
     stage_name: "",
     bio: "",
     genres: "",
@@ -314,6 +315,7 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    
     if (artistProfile && section === "profile") {
       if (artistProfile.photo) {
         setProfileImage(artistProfile.photo);
@@ -321,6 +323,7 @@ export default function DashboardPage() {
       
       const socialLinks = parseSocialLinks(artistProfile.social_links || "{}");
       setFormData({
+        profile_image: artistProfile.photo || "",
         stage_name: artistProfile.stage_name || "",
         bio: artistProfile.bio || "",
         genres: artistProfile.genres || "",
@@ -454,9 +457,12 @@ export default function DashboardPage() {
     }
   };
 
+  
+
+
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    console.log("formData",formData);
     try {
       const socialLinks = {
         instagram: formData.instagram,
@@ -474,7 +480,7 @@ export default function DashboardPage() {
         genres: formData.genres,
         social_links: socialLinks,
         min_price: formData.min_price,
-        photo: artistProfile?.photo || "",
+        photo: formData.profile_image,
       };
 
       const response = await fetch('http://localhost:8000/api/artist/me', {
@@ -497,6 +503,10 @@ export default function DashboardPage() {
       alert('Error updating profile');
     }
   };
+
+
+
+
 
   // Event Handlers
   const handleMenuClick = (key: string) => {
@@ -787,14 +797,27 @@ export default function DashboardPage() {
                       type="file" 
                       accept="image/png,image/jpeg" 
                       className="hidden" 
-                      onChange={e => {
+                      
+                      onChange={async e => {
                         const file = e.target.files?.[0];
                         if (file) {
-                          const reader = new FileReader();
-                          reader.onload = ev => setProfileImage(ev.target?.result as string);
-                          reader.readAsDataURL(file);
-                        }
-                      }} 
+                          const data = new FormData();
+                          data.append('file', file);
+                          data.append('upload_preset', 'artist-profile-images'); // שם ה־preset שיצרת
+                    
+                          const res = await fetch('https://api.cloudinary.com/v1_1/do4aoauyu/image/upload', {
+                            method: 'POST',
+                            body: data,
+                          });
+                          const result = await res.json();
+                          console.log("result",result);
+                          if (result.secure_url) {
+                            setProfileImage(result.secure_url); // תציג את התמונה מ־Cloudinary
+                            // עדכן גם את ה־formData שלך כך שה-URL יישמר (לשמור אותו במסד)
+                            setFormData(prev => ({ ...prev, profile_image: result.secure_url }));
+                            
+                                            }
+                      }}} 
                     />
                   </label>
                 </div>

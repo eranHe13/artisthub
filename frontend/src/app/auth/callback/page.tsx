@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 
 export default function AuthCallback() {
+  console.log("AuthCallback");
   const [status, setStatus] = useState('Processing...');
   const router = useRouter();
   const { login } = useAuth();
@@ -34,12 +35,13 @@ export default function AuthCallback() {
         }
 
         // Send the code to backend for processing
-        const response = await fetch(`/api/auth/google/callback?code=${code}`, {
+        const response = await fetch(`http://localhost:8000/api/auth/google/callback?code=${code}`, {
           method: 'GET',
           credentials: 'include', // Include cookies
         });
 
         if (response.ok) {
+          // Backend should redirect us, but if we get here, it means we need to handle the response
           const data = await response.json();
           if (data.success && data.user) {
             // Update auth context with user data

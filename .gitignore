@@ -1,8 +1,35 @@
-# Python
+# ===========================================
+# ENVIRONMENT & SECRETS
+# ===========================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.staging
+.env.backup
+
+# Backend environment files
+backend/.env
+backend/.env.*
+backend/config.json
+backend/secrets.json
+
+# Frontend environment files
+frontend/.env
+frontend/.env.*
+
+# ===========================================
+# PYTHON / BACKEND
+# ===========================================
+
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+
+# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -22,116 +49,452 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-# Virtual Environment
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Virtual environments
 venv/
 env/
 ENV/
 .venv/
 .env/
-# Backend virtual environment
 backend/.venv/
 backend/venv/
 backend/env/
 
-# FastAPI specific
+# FastAPI/Django/Flask specific
 backend/alembic/versions/*.py
 !backend/alembic/versions/__init__.py
 backend/alembic.ini
+backend/instance/
+backend/migrations/
+backend/celerybeat-schedule
+backend/celerybeat.pid
 
-# Database
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# ===========================================
+# DATABASES
+# ===========================================
 *.db
-*.sqlite3
 *.sqlite
+*.sqlite3
+*.db-journal
+
 # Backend database files
 backend/*.db
-backend/*.sqlite3
+backend/*.sqlite*
 backend/app/*.db
-backend/app/*.sqlite3
+backend/app/*.sqlite*
+backend/app/core/data/*.db
+backend/app/core/data/*.sqlite*
 
-# Python cache and compiled files (backend specific)
-backend/__pycache__/
-backend/**/__pycache__/
-backend/**/*.pyc
-backend/**/*.pyo
-backend/**/*.pyd
+# ===========================================
+# NODE.JS / FRONTEND
+# ===========================================
 
-# Logs (backend specific)
+# Dependencies
+node_modules/
+frontend/node_modules/
+jspm_packages/
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.pnp
+.pnp.js
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Grunt intermediate storage
+.grunt
+
+# Bower dependency directory
+bower_components
+
+# node-waf configuration
+.lock-wscript
+
+# Compiled binary addons
+build/Release
+
+# Dependency directories
+node_modules/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache
+.cache
+.parcel-cache
+
+# Next.js build output
+.next/
+out/
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+public
+
+# Storybook build outputs
+.out
+.storybook-out
+storybook-static
+
+# Temporary folders
+tmp/
+temp/
+
+# ===========================================
+# LOGS & DEBUG
+# ===========================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Backend logs
 backend/logs/
 backend/*.log
 backend/app/*.log
 
-# Node.js
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.npm
-.eslintcache
+# Runtime logs
+pids
+*.pid
+*.seed
+*.pid.lock
 
-# Next.js
-.next/
-out/
-build/
-*.tsbuildinfo
+# ===========================================
+# IDE & EDITORS
+# ===========================================
 
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-# Backend environment files
-backend/.env
-backend/.env.local
-backend/.env.production
-backend/.env.development
-
-# Backend temporary files
-backend/temp/
-backend/tmp/
-backend/uploads/
-backend/media/
-
-# Backend testing
-backend/test_*.py
-backend/**/test_*.py
-backend/pytest_cache/
-backend/.pytest_cache/
-backend/.coverage
-backend/htmlcov/
-
-# IDE files
+# Visual Studio Code
 .vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# Local History for Visual Studio Code
+.history/
+
+# Built Visual Studio Code Extensions
+*.vsix
+
+# JetBrains IDEs
 .idea/
 *.swp
 *.swo
-*~
 
-# OS files
+# Sublime Text
+*.tmlanguage.cache
+*.tmPreferences.cache
+*.stTheme.cache
+*.sublime-workspace
+*.sublime-project
+
+# Atom
+.atom/
+
+# Vim
+*~
+*.swp
+*.swo
+.vimrc.local
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ===========================================
+# OPERATING SYSTEMS
+# ===========================================
+
+# macOS
 .DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
-ehthumbs.db
+.fseventsd
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows
 Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
 
-# Logs
-logs
-*.log
+# Linux
+*~
 
-# Others
-.cache/
-coverage/
-.nyc_output/ 
+# ===========================================
+# SECURITY & CERTIFICATES
+# ===========================================
 
+# SSL certificates
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+
+# SSH keys
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+*.pub
+
+# GPG keys
+*.gpg
+*.asc
+
+# ===========================================
+# DOCKER & CONTAINERIZATION
+# ===========================================
+Dockerfile.prod
+docker-compose.override.yml
+.dockerignore
+
+# ===========================================
+# CLOUD & DEPLOYMENT
+# ===========================================
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Serverless Framework
+.serverless/
+
+# AWS
+.aws/
+
+# Google Cloud
+.gcloud/
+
+# Azure
+.azure/
+
+# Kubernetes
+*.kubeconfig
+
+# ===========================================
+# MONITORING & ANALYTICS
+# ===========================================
+
+# Sentry
+.sentryclirc
+
+# ===========================================
+# BACKEND SPECIFIC FILES
+# ===========================================
+
+# Backend uploads & media
+backend/uploads/
+backend/media/
+backend/static/uploads/
+backend/tmp/
+backend/temp/
+
+# Backend testing
+backend/test_*.py
+backend/**/test_*.py
+
+# ===========================================
+# FRONTEND SPECIFIC FILES
+# ===========================================
+
+# Build outputs
+frontend/dist/
+frontend/.turbo/
+
+# Testing
+frontend/coverage/
+frontend/.nyc_output/
+
+# ===========================================
+# MISC & TEMPORARY FILES
+# ===========================================
+
+# Archive files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# Lock files (except for package managers)
+*.lock
+!package-lock.json
+!yarn.lock
+!pnpm-lock.yaml
+!poetry.lock
+
+# ===========================================
+# PROJECT SPECIFIC
+# ===========================================
+
+# Custom project files
 .others/
 .tree.txt
-.venv/
-
-.nginx.conf
-.SECURITY_DEPLOYMENT_GUIDE.md
-.setup-ssl.sh
 .test.py
 .test11.db
 .view_only.db
+
+# Nginx configs (keep the main one)
+.nginx.conf
+
+# Documentation (keep the main ones)
+.SECURITY_DEPLOYMENT_GUIDE.md
+.setup-ssl.sh
+
+# Development databases
+*.dev.db
+*.test.db
+*.local.db
+
+# Cache directories
+.cache/
+.parcel-cache/
+.turbo/
+
+# Editor directories and files
+.fleet
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Local configuration files
+local.settings.json
+.env.development
+.env.production
+
+# Performance monitoring
+.clinic/
+prof/
+speed/
+
+# React Native
+.expo/
+.expo-shared/
+
+# Storybook
+.out
+.storybook-out
+
+# Chromatic
+chromatic.log
+build-storybook.log

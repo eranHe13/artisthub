@@ -6,7 +6,7 @@ import json
 
 from app.core.db import get_db
 from app.models.models import ArtistProfile, User
-from app.schemas.auth import ArtistProfileUpdate, ArtistProfileResponse
+from app.schemas.auth import ArtistProfileResponse
 router = APIRouter()
 
 
@@ -17,3 +17,7 @@ def get_public_artist_profile(user_id: int, db: Session = Depends(get_db)):
     if not profile:
         raise HTTPException(status_code=404, detail="Artist not found")
     return profile
+
+
+
+

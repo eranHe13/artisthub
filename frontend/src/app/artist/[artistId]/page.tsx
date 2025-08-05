@@ -232,9 +232,8 @@ export default function ArtistProfilePage() {
           {/* Invitation Card */}
           <Card className="bg-gray-800 border-gray-700 shadow-lg">
             <CardContent className="py-6 flex flex-col items-center text-center">
-              <h3 className="text-lg font-semibold text-white mb-2">Invitation</h3>
-              <p className="text-gray-300 mb-4">Invite {artistName} to your next event for an unforgettable experience!</p>
-              <div className="mb-4 text-lg font-bold text-blue-300">Minimum Booking Fee: ${minPrice} USD</div>
+              <h1 className="text-lg font-semibold text-white mb-2">Invite {artistName}</h1>
+              <div className="mb-4 text-lg font-bold text-blue-300">Start from: ${minPrice} USD</div>
               <button className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition" onClick={handleSendInvitation}>Send Invitation</button>
             </CardContent>
           </Card>

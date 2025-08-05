@@ -20,9 +20,8 @@ export default function LoginPage() {
     try {
       await signInWithGoogle();
       console.log("Login successful");
-      
-      // signInWithGoogle will redirect to Google OAuth - no localStorage needed
-      // After OAuth success, user will be redirected back with secure cookie set
+      // signInWithGoogle will redirect to Google OAuth
+      // After OAuth success, user will be redirected to /auth/callback
     } catch (error) {
       console.error("Login failed:", error);
       setIsLoading(false);

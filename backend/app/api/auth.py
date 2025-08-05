@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
+from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
@@ -19,7 +20,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60  # 1 hour for security
 
 # Security scheme
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
 
 # Router
 router = APIRouter()
@@ -33,6 +34,7 @@ def create_access_token(data: dict) -> str:
 
 @router.get("/google/login")
 def google_login():
+    print(f"Google login")
     params = {
         "client_id": os.getenv("GOOGLE_CLIENT_ID"),
         "redirect_uri": os.getenv("GOOGLE_REDIRECT_URI"),
@@ -46,6 +48,7 @@ def google_login():
 
 @router.get("/google/callback")
 def google_callback(code: str, response: Response, db: Session = Depends(get_db)):
+
     print(f"Google callback received with code: {code}")
     print(f"Google callback received with code: {code}")
     # Step 1: Exchange code for access_token
@@ -93,17 +96,18 @@ def google_callback(code: str, response: Response, db: Session = Depends(get_db)
     db.add(session)
     db.commit()
     
-    # Set secure HTTP-only cookie
-    response.set_cookie(
+    # Set secure HTTP-only cookie and redirect to frontend
+    redirect_response = RedirectResponse(url="http://localhost:3000/dashboard")
+    redirect_response.set_cookie(
         key="access_token",
         value=access_token_jwt,
         max_age=3600,  # 1 hour in seconds
         httponly=True,
-        secure=True,  # HTTPS only
+        secure=False,  # Set to False for development (HTTP)
         samesite="lax"
     )
     
-    return {"success": True, "user": {"id": user.id, "email": user.email, "name": user.name, "role": user.role}}
+    return redirect_response
 
 async def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
     # Extract token from cookie instead of Authorization header
@@ -125,10 +129,6 @@ async def get_current_user(request: Request, db: Session = Depends(get_db)) -> U
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
-
-@router.get("/me", response_model=UserResponse)
-async def get_me(current_user: User = Depends(get_current_user)):
-    return current_user
 
 @router.post("/logout")
 async def logout(response: Response, request: Request, db: Session = Depends(get_db)):

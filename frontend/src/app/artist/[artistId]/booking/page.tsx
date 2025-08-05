@@ -1,9 +1,10 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 
 export default function BookingSubmitPage() {
   const [step, setStep] = useState(1);
+  const [artistInfo, setArtistInfo] = useState<{ min_price?: number; currency?: string }>({});
   const [form, setForm] = useState({
     // Step 1
     event_date: "",
@@ -29,6 +30,28 @@ export default function BookingSubmitPage() {
     client_message: ""
   });
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Fetch artist information on component mount
+  useEffect(() => {
+    const fetchArtistInfo = async () => {
+      try {
+        const artistId = window.location.pathname.split('/')[2];
+        const response = await fetch(`http://localhost:8000/api/public/artist/${artistId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setArtistInfo({
+            min_price: data.min_price,
+            currency: data.currency || 'USD'
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching artist info:', error);
+      }
+    };
+
+    fetchArtistInfo();
+  }, []);
 
   const handleChange = (field: string, value: any) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -36,9 +59,91 @@ export default function BookingSubmitPage() {
 
   const handleNext = () => setStep((s) => s + 1);
   const handlePrev = () => setStep((s) => s - 1);
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  
+  const validateBudget = () => {
+    if (!artistInfo.min_price) return true; // No minimum price set, allow any budget
+    
+    const budget = parseFloat(form.budget);
+    if (isNaN(budget)) return false;
+    
+    return budget >= artistInfo.min_price;
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSubmitted(true);
+    
+    // Validate required fields
+    const requiredFields = [
+      'event_date', 'event_time', 'time_zone', 'budget', 'venue_name', 
+      'city', 'country', 'performance_duration', 'participant_count',
+      'client_first_name', 'client_last_name', 'client_email'
+    ];
+    
+    const missingFields = requiredFields.filter(field => !form[field as keyof typeof form]);
+    
+    if (missingFields.length > 0) {
+      alert(`Please fill in all required fields: ${missingFields.join(', ')}`);
+      return;
+    }
+
+    // Validate budget against artist's minimum price
+    if (!validateBudget()) {
+      alert(`Budget must be at least ${artistInfo.min_price} ${artistInfo.currency || 'USD'}`);
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Get artist ID from URL
+      const artistId = window.location.pathname.split('/')[2]; // /artist/[artistId]/booking
+      
+      // Prepare booking data
+      const bookingData = {
+        event_date: form.event_date,
+        event_time: form.event_time,
+        time_zone: form.time_zone,
+        budget: parseFloat(form.budget),
+        currency: form.currency,
+        venue_name: form.venue_name,
+        city: form.city,
+        country: form.country,
+        performance_duration: parseInt(form.performance_duration),
+        participant_count: parseInt(form.participant_count),
+        includes_travel: form.includes_travel,
+        includes_accommodation: form.includes_accommodation,
+        client_first_name: form.client_first_name,
+        client_last_name: form.client_last_name,
+        client_email: form.client_email,
+        client_phone: form.client_phone,
+        client_company: form.client_company,
+        client_message: form.client_message
+      };
+
+      // Send booking request to API
+      const response = await fetch(`http://localhost:8000/api/bookings/?artist_id=${artistId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies for authentication
+        body: JSON.stringify(bookingData)
+      });
+
+      if (response.ok) {
+        setSubmitted(true);
+        console.log('Booking submitted successfully!');
+      } else {
+        const errorData = await response.json();
+        console.error('Booking submission failed:', errorData);
+        alert(`Booking submission failed: ${errorData.detail || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error submitting booking:', error);
+      alert('Error submitting booking. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Minimal timezones/currencies for demo
@@ -96,10 +201,32 @@ export default function BookingSubmitPage() {
                 {/* Budget */}
                 <div className="mb-6">
                   <div className="font-semibold mb-2 flex items-center gap-2"><span className="text-green-600">$</span> Budget</div>
+                  {artistInfo.min_price && (
+                    <div className="mb-3 p-3 bg-blue-50 rounded border border-blue-200">
+                      <div className="text-sm text-blue-800">
+                        <strong>Minimum Budget:</strong> {artistInfo.min_price} {artistInfo.currency || 'USD'}
+                      </div>
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-1 !text-black">Budget Amount *</label>
-                      <input type="number" className="w-full !border-2 !border-black rounded px-2 py-1 !bg-white !text-black bg-white text-black" value={form.budget} onChange={e=>handleChange('budget',e.target.value)} required />
+                      <input 
+                        type="number" 
+                        className={`w-full !border-2 rounded px-2 py-1 !bg-white !text-black ${
+                          form.budget && !validateBudget() 
+                            ? '!border-red-500 bg-red-50' 
+                            : '!border-black'
+                        }`}
+                        value={form.budget} 
+                        onChange={e=>handleChange('budget',e.target.value)} 
+                        required 
+                      />
+                      {form.budget && !validateBudget() && (
+                        <div className="text-red-600 text-sm mt-1">
+                          Budget must be at least {artistInfo.min_price} {artistInfo.currency || 'USD'}
+                        </div>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1 !text-black">Currency</label>
@@ -173,7 +300,17 @@ export default function BookingSubmitPage() {
                   </div>
                 </div>
                 <div className="flex justify-end">
-                  <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded">Next</button>
+                  <button 
+                    type="submit" 
+                    className={`px-8 py-2 rounded ${
+                      form.budget && !validateBudget() 
+                        ? 'bg-gray-400 cursor-not-allowed' 
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    } text-white`}
+                    disabled={!!form.budget && !validateBudget()}
+                  >
+                    Next
+                  </button>
                 </div>
               </form>
             )}
@@ -233,6 +370,46 @@ export default function BookingSubmitPage() {
               </form>
             )}
             {step === 3 && (
+              <form onSubmit={handleSubmit} className="text-center space-y-8">
+                <div className="flex justify-center">
+                  <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span className="text-blue-600 text-5xl">📋</span>
+                  </div>
+                </div>
+                <div>
+                  <h2 className="text-3xl font-bold text-gray-900 mb-4">Review & Submit Booking</h2>
+                  <p className="text-lg text-gray-600 max-w-2xl mx-auto">Please review your booking details below and click submit to send your request to <strong>DJ Eran</strong>.</p>
+                </div>
+                
+                {/* Booking Summary */}
+                <div className="bg-blue-50 rounded p-6 text-left">
+                  <div className="font-semibold text-lg mb-4">Booking Summary</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div><strong>Event Date:</strong> {form.event_date} at {form.event_time}</div>
+                    <div><strong>Venue:</strong> {form.venue_name}, {form.city}</div>
+                    <div><strong>Duration:</strong> {form.performance_duration} minutes</div>
+                    <div><strong>Budget:</strong> {form.currency} {form.budget}</div>
+                    <div><strong>Participants:</strong> {form.participant_count}</div>
+                    <div><strong>Travel Included:</strong> {form.includes_travel ? 'Yes' : 'No'}</div>
+                    <div><strong>Accommodation Included:</strong> {form.includes_accommodation ? 'Yes' : 'No'}</div>
+                    <div><strong>Contact:</strong> {form.client_first_name} {form.client_last_name}</div>
+                  </div>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <button type="button" className="px-8 py-2 border rounded bg-white" onClick={handlePrev} disabled={isSubmitting}>Back to Edit</button>
+                  <button 
+                    type="submit" 
+                    className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded disabled:bg-gray-400 disabled:cursor-not-allowed" 
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? 'Submitting...' : 'Submit Booking Request'}
+                  </button>
+                </div>
+              </form>
+            )}
+            
+            {submitted && (
               <div className="text-center space-y-8">
                 <div className="flex justify-center">
                   <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
@@ -244,8 +421,8 @@ export default function BookingSubmitPage() {
                   <p className="text-lg text-gray-600 max-w-2xl mx-auto">Your booking request has been sent to <strong>DJ Eran</strong>. You'll receive a confirmation email shortly, and the artist will respond to your request soon.</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <button className="px-8 py-2 border rounded bg-white">Back to Artist Profile</button>
-                  <button className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">Browse More Artists</button>
+                  <button className="px-8 py-2 border rounded bg-white" onClick={() => window.history.back()}>Back to Artist Profile</button>
+                  <button className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded" onClick={() => window.location.href = '/'}>Browse More Artists</button>
                 </div>
               </div>
             )}

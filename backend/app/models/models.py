@@ -41,6 +41,7 @@ class ArtistProfile(Base):
     genres = Column(String, nullable=True)  # Store as comma-separated string
     social_links = Column(Text, nullable=True)  # JSON-encoded
     min_price = Column(Numeric, nullable=True)
+    currency = Column(String(10), default="USD")  # Default currency for the artist
     photo = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -54,30 +55,32 @@ class BookingRequest(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     artist_id = Column(Integer, ForeignKey("artist_profiles.user_id"), nullable=False, index=True)
-    event_date = Column(Date)
-    event_time = Column(Time)
-    time_zone = Column(String(100))
-    budget = Column(Numeric)
-    currency = Column(String(10))
-    venue_name = Column(String(255))
-    city = Column(String(100))
-    country = Column(String(100))
-    performance_duration = Column(Integer)
-    participant_count = Column(Integer)
+    event_date = Column(Date, nullable=False)
+    event_time = Column(Time, nullable=False)
+    time_zone = Column(String(100), nullable=False)
+    budget = Column(Numeric(10, 2), nullable=False)
+    currency = Column(String(10), default="USD")
+    venue_name = Column(String(255), nullable=False)
+    city = Column(String(100), nullable=False)
+    country = Column(String(100), nullable=False)
+    performance_duration = Column(Integer, nullable=False)  # in minutes
+    participant_count = Column(Integer, nullable=False)
     includes_travel = Column(Boolean, default=False)
     includes_accommodation = Column(Boolean, default=False)
-    client_first_name = Column(String(100))
-    client_last_name = Column(String(100))
-    client_email = Column(String(255))
-    client_phone = Column(String(50))
-    client_company = Column(String(255))
-    client_message = Column(Text)
-    status = Column(String(50), default="pending")
+    client_first_name = Column(String(100), nullable=False)
+    client_last_name = Column(String(100), nullable=False)
+    client_email = Column(String(255), nullable=False)
+    client_phone = Column(String(50), nullable=True)
+    client_company = Column(String(255), nullable=True)
+    client_message = Column(Text, nullable=True)
+    status = Column(String(50), default="pending")  # pending, accepted, rejected, cancelled
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     artist = relationship("ArtistProfile", back_populates="bookings")
     messages = relationship("ChatMessage", back_populates="booking", cascade="all, delete-orphan")
+
+
 
 class ChatMessage(Base):
     __tablename__ = "chat_messages"

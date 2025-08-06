@@ -498,3 +498,16 @@ speed/
 # Chromatic
 chromatic.log
 build-storybook.log
+
+
+others/
+requirements.txt
+SECURITY_DEPLOYMENT_GUIDE.md
+setup-ssl.sh
+.nginx.conf
+
+
+
+
+
+

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { RequestsSection } from "@/components/RequestsSection";
 import { EarningsSection } from "@/components/EarningsSection";
 import { CalendarSection } from "@/components/CalendarSection";
@@ -7,6 +7,9 @@ import { ProfileSection } from "@/components/ProfileSection";
 import { DashboardSection } from "@/components/DashboardSection";
 import { BookingDetailDrawer } from "@/components/BookingDetailDrawer";
 import { useDashboardData } from "@/app/hooks";
+
+// Types and Interfaces
+type Value = Date | Date[] | null;
 
 // Constants
 const MENU = [
@@ -17,13 +20,9 @@ const MENU = [
   { key: "profile", label: "Profile" }
 ];
 
-
-
-
-
-// Main Component
-export default function DashboardPage() {
-  // UI State (only)
+// Main Component - Simplified with hooks
+export default function DashboardPageWithHooks() {
+  // UI State
   const [section, setSection] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [expandedRequestId, setExpandedRequestId] = useState<number | null>(null);
@@ -46,32 +45,16 @@ export default function DashboardPage() {
     dashboardStats,
     earningsStats,
     statsLoading,
+    
+    // Actions
+    refreshAllData,
   } = useDashboardData();
-
-  // Effects
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 600) setSidebarOpen(false);
-      else setSidebarOpen(true);
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-
-
-
-
-
 
   // Event Handlers
   const handleMenuClick = (key: string) => {
     setSection(key);
     if (window.innerWidth < 600) setSidebarOpen(false);
   };
-
-
 
   return (
     <div className="flex min-h-screen bg-[#181c23] text-gray-100">
@@ -126,78 +109,69 @@ export default function DashboardPage() {
       {/* Main Content */}
       <main className="flex-1 px-8 py-12 md:px-16 md:py-16 bg-[#181c23] min-h-screen">
         {/* Dashboard Section */}
-
         {section === "dashboard" && (
-        <DashboardSection
-          dashboardStats={dashboardStats}
-          bookings={bookings}
-          bookingsLoading={bookingsLoading || statsLoading}
-          onBookingClick={(bookingId) => setExpandedRequestId(bookingId)}
-        />
-       )}
-
-
-
-
+          <DashboardSection
+            dashboardStats={dashboardStats}
+            bookings={bookings}
+            bookingsLoading={bookingsLoading || statsLoading}
+            onBookingClick={(bookingId) => setExpandedRequestId(bookingId)}
+          />
+        )}
 
         {/* Booking Requests Section */}
         {section === "requests" && (
-        <RequestsSection
-          bookings={bookings}
-          bookingsLoading={bookingsLoading}
-          filter={filter}
-          setFilter={setFilter}
-          expandedRequestId={expandedRequestId}
-          setExpandedRequestId={setExpandedRequestId}
-          updateBookingDetails={updateBookingDetails}
-          updateBookingStatus={updateBookingStatus}
-        />
-)}
-
-        {/* Earnings Section */}
-        {section === "earnings" && (
-        <EarningsSection
-          earningsStats={earningsStats}
-          bookings={bookings}
-          bookingsLoading={bookingsLoading || statsLoading}
-        />
-)}
-
-
-
-
-    {section === "profile" && (
-      <ProfileSection
-        artistProfile={artistProfile}
-        profileLoading={profileLoading}
-        onProfileUpdate={updateArtistProfile}
-      />
-    )}
-
-
-        {/* Calendar Section */}
-        {section === "calendar" && (
-        <CalendarSection
-          bookings={bookings}
-          bookingsLoading={bookingsLoading}
-          onEventClick={(booking) => setExpandedRequestId(booking.id)}
-        />
-      )}
-
-      {/* Booking Detail Drawer */}
-      {expandedRequestId && (() => {
-        const req = bookings.find(r => r.id === expandedRequestId);
-        if (!req) return null;
-        return (
-          <BookingDetailDrawer
-            req={req}
-            onClose={() => setExpandedRequestId(null)}
+          <RequestsSection
+            bookings={bookings}
+            bookingsLoading={bookingsLoading}
+            filter={filter}
+            setFilter={setFilter}
+            expandedRequestId={expandedRequestId}
+            setExpandedRequestId={setExpandedRequestId}
             updateBookingDetails={updateBookingDetails}
             updateBookingStatus={updateBookingStatus}
           />
-        );
-      })()}
+        )}
 
+        {/* Earnings Section */}
+        {section === "earnings" && (
+          <EarningsSection
+            earningsStats={earningsStats}
+            bookings={bookings}
+            bookingsLoading={bookingsLoading || statsLoading}
+          />
+        )}
+
+        {/* Profile Section */}
+        {section === "profile" && (
+          <ProfileSection
+            artistProfile={artistProfile}
+            profileLoading={profileLoading}
+            onProfileUpdate={updateArtistProfile}
+          />
+        )}
+
+        {/* Calendar Section */}
+        {section === "calendar" && (
+          <CalendarSection
+            bookings={bookings}
+            bookingsLoading={bookingsLoading}
+            onEventClick={(booking) => setExpandedRequestId(booking.id)}
+          />
+        )}
+
+        {/* Booking Detail Drawer */}
+        {expandedRequestId && (() => {
+          const req = bookings.find(r => r.id === expandedRequestId);
+          if (!req) return null;
+          return (
+            <BookingDetailDrawer
+              req={req}
+              onClose={() => setExpandedRequestId(null)}
+              updateBookingDetails={updateBookingDetails}
+              updateBookingStatus={updateBookingStatus}
+            />
+          );
+        })()}
       </main>
     </div>
   );

@@ -388,6 +388,10 @@ docker-compose.override.yml
 # ===========================================
 
 # Backend uploads & media
+backend/API_EXAMPLES.md
+backend/update_artist_min_price.py
+backend/requirements-test.txt
+backend/migrate_add_currency.py
 backend/uploads/
 backend/media/
 backend/static/uploads/

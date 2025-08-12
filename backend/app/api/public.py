@@ -6,11 +6,11 @@ import json
 
 from app.core.db import get_db
 from app.models.models import ArtistProfile, User
-from app.schemas.auth import ArtistProfileResponse
+from app.schemas.auth import ArtistProfileOut
 router = APIRouter()
 
 
-@router.get("/artist/{user_id}", response_model=ArtistProfileResponse)
+@router.get("/artist/{user_id}", response_model=ArtistProfileOut)
 def get_public_artist_profile(user_id: int, db: Session = Depends(get_db)):
     print(f"Getting public artist profile for user_id: {user_id}")
     profile = db.query(ArtistProfile).filter(ArtistProfile.user_id == user_id).first()

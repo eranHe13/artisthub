@@ -1,6 +1,11 @@
-from pydantic import BaseModel, EmailStr, HttpUrl, field_serializer
+from pydantic import BaseModel, EmailStr, HttpUrl, field_serializer , field_validator
 from typing import List, Optional
 from datetime import datetime, date, time
+from typing import List, Optional, Dict, Any
+import json
+
+
+
 
 # Token schemas
 class Token(BaseModel):
@@ -19,19 +24,13 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
-class UserResponse(UserBase):
-    id: int
-    email: str 
-    name: str   
-    role: str
-    created_at: datetime
-    
 
 class UserResponse(BaseModel):
     id: int
     email: str 
     name: str   
     role: str
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -48,14 +47,19 @@ class RegisterRequest(UserCreate):
 class GoogleAuthCode(BaseModel):
     code: str
 
+
+# Artist profile schemas
+
+
 class ArtistProfileUpdate(BaseModel):
     stage_name: Optional[str] = None
     bio: Optional[str] = None
     genres: Optional[str] = None
-    social_links: Optional[dict] = None
+    social_links: Optional[Dict[str, Any]] = None 
     min_price: Optional[float] = None
     currency: Optional[str] = None
     photo: Optional[str] = None
+
 
 class ArtistProfileOut(BaseModel):
     id: int
@@ -63,7 +67,7 @@ class ArtistProfileOut(BaseModel):
     stage_name: Optional[str] = None
     bio: Optional[str] = None
     genres: Optional[str] = None
-    social_links: Optional[str] = None
+    social_links: Optional[Dict[str, Any]] = None
     min_price: Optional[float] = None
     currency: Optional[str] = None
     photo: Optional[str] = None
@@ -73,30 +77,30 @@ class ArtistProfileOut(BaseModel):
     class Config:
         from_attributes = True
 
-class BookingRequestUpdate(BaseModel):
-    event_date: Optional[str] = None
-    event_time: Optional[str] = None
-    duration : Optional[int] = None
-    budget: Optional[float] = None
+    # 👇 זה החלק הקריטי: המרה לפני וולידציה
+    @field_validator("social_links", mode="before")
+    @classmethod
+    def parse_social_links(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except Exception:
+                # אם המחרוזת לא JSON תקין – תן None או זרוק שגיאה לפי הצורך
+                return None
+        return v
+
+
+
+
+
     
-    
 
 
-
-class ArtistProfileResponse(BaseModel):
-    user_id: int
-    stage_name: Optional[str] = ""
-    bio: Optional[str] = ""
-    genres: Optional[str] = ""
-    social_links: Optional[str] = "{}"
-    min_price: Optional[float] = 0
-    currency: Optional[str] = "USD"
-    photo: Optional[str] = ""
-
-    class Config:
-        from_attributes = True
 
 # Booking schemas
+
+
+
 class BookingRequestCreate(BaseModel):
     event_date: str  # YYYY-MM-DD format
     event_time: str  # HH:MM format
@@ -110,6 +114,7 @@ class BookingRequestCreate(BaseModel):
     participant_count: int
     includes_travel: bool = False
     includes_accommodation: bool = False
+    includes_ground_transportation: bool = False
     client_first_name: str
     client_last_name: str
     client_email: str
@@ -132,6 +137,7 @@ class BookingRequestResponse(BaseModel):
     participant_count: int
     includes_travel: bool
     includes_accommodation: bool
+    includes_ground_transportation: bool
     client_first_name: str
     client_last_name: str
     client_email: str
@@ -141,6 +147,8 @@ class BookingRequestResponse(BaseModel):
     status: str
     created_at: datetime
     updated_at: datetime
+    artist_stage_name: Optional[str] = None
+    
 
     class Config:
         from_attributes = True
@@ -156,10 +164,62 @@ class BookingRequestResponse(BaseModel):
 class BookingStatusUpdate(BaseModel):
     status: str  # accepted, rejected, cancelled
 
+
+class BookingRequestUpdate(BaseModel):
+    event_date: Optional[str] = None
+    event_time: Optional[str] = None
+    performance_duration: Optional[int] = None 
+    budget: Optional[float] = None
+
+
+class ArtistDashboardStats(BaseModel):
+    total_requests: int
+    active_bookings: int
+    pending: int
+    accepted: int
+    cancelled: int
+    total_earnings: float
+    this_month_earnings: float
+    avg_booking_fee: float
+    total_bookings: int
+
+    class Config:
+        from_attributes = True
+
+
+## Artist dashboard schemas
+
+
 class ArtistDashboardResponse(BaseModel):
-    profile: ArtistProfileResponse
+    profile: ArtistProfileOut
     bookings: List[BookingRequestResponse]
-    stats: dict  # Dashboard statistics
+    stats: ArtistDashboardStats
     
     class Config:
         from_attributes = True
+
+
+
+
+###  Chat schemas
+
+
+class MessageCreate(BaseModel):
+    message: str
+
+class MessageResponse(BaseModel):
+    id: int
+    booking_request_id: int
+    sender_user_id: Optional[int] = None   # <-- במקום sender_id
+    sender_type: str                       # 'artist' | 'booker'
+    message: str
+    timestamp: datetime
+    is_read: bool
+    sender_name: str = ""                  # ימולא מה-relationship/שאילתה
+
+    class Config:
+        from_attributes = True
+
+class ChatResponse(BaseModel):
+    messages: List[MessageResponse]
+    total_count: int

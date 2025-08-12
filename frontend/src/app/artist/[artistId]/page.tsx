@@ -15,12 +15,21 @@ const SoundcloudIcon = () => (
   <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="16" fill="#FF5500"/><path d="M24.2 19.2c-.2 0-.3 0-.5.1-.2-1.7-1.7-3-3.4-3-.3 0-.6.1-.9.2-.2-2.2-2-3.9-4.2-3.9-.3 0-.6 0-.9.1-.2 0-.3.2-.3.4v8.1c0 .2.2.4.4.4h9.8c.2 0 .4-.2.4-.4 0-1.1-.9-2-2-2zm-10.2-4.2c-.2 0-.4.2-.4.4v7.2c0 .2.2.4.4.4s.4-.2.4-.4v-7.2c0-.2-.2-.4-.4-.4zm-1.6 1.2c-.2 0-.4.2-.4.4v6c0 .2.2.4.4.4s.4-.2.4-.4v-6c0-.2-.2-.4-.4-.4zm-1.6 1.2c-.2 0-.4.2-.4.4v4.8c0 .2.2.4.4.4s.4-.2.4-.4v-4.8c0-.2-.2-.4-.4-.4zm-1.6 1.2c-.2 0-.4.2-.4.4v3.6c0 .2.2.4.4.4s.4-.2.4-.4v-3.6c0-.2-.2-.4-.4-.4z" fill="#fff"/></svg>
 );
 
+const BandcampIcon = () => (
+  <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="16" cy="16" r="16" fill="#1ED760" />
+    <path fill="#fff" d="M9 21l4.7-10H23L18.3 21H9z"/>
+  </svg>
+);
+
+
+
 interface ArtistProfile {
   user_id: number;
   stage_name: string;
   bio: string;
   genres: string;
-  social_links: string;
+  social_links?: Record<string, string> | string | null; // ← היה string בלבד
   min_price: number;
   photo: string;
 }
@@ -46,6 +55,7 @@ export default function ArtistProfilePage() {
       
       if (response.ok) {
         const profile = await response.json();
+        console.log(profile);
         setArtistProfile(profile);
       } else {
         setError('Failed to load artist profile');
@@ -63,21 +73,26 @@ export default function ArtistProfilePage() {
   };
 
   const handleSendInvitation = () => {
-    // move to booking page
-    window.location.href = `/artist/${artistProfile?.user_id}/booking`;
-    console.log("Sending invitation");
-
+    const artistName = artistProfile?.stage_name || ""; 
+    const artistId = artistProfile?.user_id;
+  
+    // קידוד לשימוש ב-URL
+    const encodedName = encodeURIComponent(artistName);
+  
+    // מוסיפים ל-URL כ-Query Param
+    window.location.href = `/artist/${artistId}/booking?artistName=${encodedName}`;
+    console.log("Sending invitation with artistName:", artistName);
   };
   // Parse social links from JSON string
-  const getSocialLinks = () => {
-    if (!artistProfile?.social_links) return {};
-    try {
-      return JSON.parse(artistProfile.social_links);
-    } catch {
-      return {};
+  const getSocialLinks = (): Record<string, string> => {
+    const v = artistProfile?.social_links;
+    if (!v) return {};
+    if (typeof v === "string") {
+      try { return JSON.parse(v); } catch { return {}; }
     }
+    // כבר אובייקט
+    return v as Record<string, string>;
   };
-
   // Parse genres from comma-separated string
   const getGenres = () => {
     if (!artistProfile?.genres) return [];
@@ -199,7 +214,7 @@ export default function ArtistProfilePage() {
           )}
 
           {/* Listen to My Music Card */}
-          {(socialLinks.youtube || socialLinks.soundcloud || socialLinks.spotify) && (
+          {(socialLinks.youtube || socialLinks.soundcloud || socialLinks.spotify || socialLinks.bandcamp) && (
             <Card className="bg-gray-800 border-gray-700 w-full max-w-2xl mx-auto shadow-lg">
               <CardContent className="py-6 text-center">
                 <h3 className="font-semibold text-gray-200 flex items-center gap-2 justify-center mb-4">
@@ -221,6 +236,14 @@ export default function ArtistProfilePage() {
                       <SoundcloudIcon />
                     </a>
                   )}
+
+                  {socialLinks.bandcamp && (
+                      <a href={socialLinks.bandcamp} className="hover:scale-110 transition" target="_blank" rel="noopener noreferrer" aria-label="Bandcamp">
+                        <BandcampIcon />
+                      </a>
+                    )}
+
+
                 </div>
               </CardContent>
             </Card>

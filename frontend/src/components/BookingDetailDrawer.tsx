@@ -1,6 +1,7 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect  , useRef } from "react";
 import { BookingRequest } from "@/app/types/booking";
+import { useArtistChat } from "@/app/hooks/useArtistChat";
 
 interface BookingDetailDrawerProps {
   req: BookingRequest;
@@ -19,6 +20,13 @@ export function BookingDetailDrawer({
   const [editedDateTime, setEditedDateTime] = useState("");
   const [editedDuration, setEditedDuration] = useState(req.performance_duration);
   const [editedBudget, setEditedBudget] = useState(req.budget);
+
+  // ---- Chat (artist side) ----
+  const [newMessage, setNewMessage] = useState("");
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [atBottom, setAtBottom] = useState(true);
+  const { messages, loading, error, refetch, sendArtistMessage } = useArtistChat(String(req.id));
 
   useEffect(() => {
     setEditedDateTime(`${req.event_date}T${req.event_time}`);
@@ -58,6 +66,37 @@ export function BookingDetailDrawer({
         return "bg-yellow-100 text-yellow-700";
     }
   };
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      };
+    
+      const handleScroll = () => {
+        const el = messagesContainerRef.current;
+        if (!el) return;
+        const isBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 8;
+        setAtBottom(isBottom);
+      };
+    
+      useEffect(() => {
+        if (atBottom) scrollToBottom();
+      }, [messages, atBottom]);
+    
+      const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          onSend();
+        }
+      };
+
+    const onSend = async () => {
+        const text = newMessage.trim();
+        if (!text) return;
+        await sendArtistMessage(text);
+        setNewMessage("");
+        await refetch();
+        scrollToBottom();
+      };
 
   return (
     <div className="fixed top-0 right-0 h-full w-full sm:w-[520px] bg-[#181c23] border-l border-[#cccccc] shadow-2xl z-50 flex flex-col transition-transform duration-300 animate-slide-in">
@@ -201,18 +240,89 @@ export function BookingDetailDrawer({
                 {req.includes_accommodation ? 'Included' : 'Not included'}
               </span>
             </div>
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${req.includes_ground_transportation ? 'bg-green-500' : 'bg-gray-500'}`}></span>
+              <span className="font-medium">Ground Transportation:</span>
+              <span className={req.includes_ground_transportation ? 'text-green-400' : 'text-gray-400'}>
+                {req.includes_ground_transportation ? 'Included' : 'Not included'}
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Client Message */}
-        {req.client_message && (
+        {/* {req.client_message && (
           <div className="mb-6">
             <div className="font-semibold text-lg mb-2 text-white">Client Message</div>
             <div className="text-[#cccccc] bg-[#2a2f3a] p-4 rounded-lg border border-gray-600">
               {req.client_message}
             </div>
           </div>
-        )}
+        )} */}
+
+        {/* Artist Chat */}
+        <div className="mb-6">
+          <div className="font-semibold text-lg mb-2 text-white">Chat</div>
+          <div className="bg-[#1f2430] border border-gray-700 rounded-xl p-0 overflow-hidden relative">
+            {/* Messages list (scrollable) */}
+            <div
+              ref={messagesContainerRef}
+              onScroll={handleScroll}
+              className="h-[320px] overflow-y-auto p-4 space-y-3"
+            >
+              {loading ? (
+                <div className="text-[#cccccc]">Loading messages…</div>
+              ) : error ? (
+                <div className="text-red-400">{error}</div>
+              ) : messages.length === 0 ? (
+                <div className="text-[#9aa0aa]">No messages yet.</div>
+              ) : (
+                messages.map((m) => (
+                  <div key={m.id} className={`flex ${m.sender_type === "artist" ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-[75%] rounded-lg px-3 py-2 text-sm
+                      ${m.sender_type === "artist" ? "bg-purple-600 text-white" : "bg-[#2a2f3a] text-[#e5e7eb]"}
+                    `}>
+                      <div className="opacity-75 text-xs mb-1">{m.sender_name}</div>
+                      <div className="whitespace-pre-wrap">{m.message}</div>
+                    </div>
+                  </div>
+                ))
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Scroll to latest button */}
+            {!atBottom && (
+              <button
+                onClick={scrollToBottom}
+                className="absolute bottom-20 right-3 bg-purple-600 hover:bg-purple-500 text-white text-xs px-3 py-1 rounded-md shadow"
+              >
+                Scroll to latest
+              </button>
+            )}
+
+            {/* Composer */}
+            <div className="border-t border-gray-700 p-3 flex gap-2">
+              <textarea
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Type your message…"
+                className="flex-1 resize-none rounded-md bg-[#2a2f3a] text-white border border-gray-600 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                rows={1}
+                style={{ minHeight: "40px", maxHeight: "120px" }}
+              />
+              <button
+                onClick={onSend}
+                disabled={!newMessage.trim()}
+                className="px-4 py-2 rounded-md bg-purple-600 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-purple-700 transition-colors"
+                aria-disabled={!newMessage.trim()}
+              >
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
 
         {/* Booking Timeline */}
         <div className="mb-6">

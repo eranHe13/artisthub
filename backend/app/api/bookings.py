@@ -1,13 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, status, Query    
+from sqlalchemy.orm import Session, joinedload
 from datetime import datetime, date, time
 from typing import List
 import logging
-
 from app.core.db import get_db
 from app.models.models import BookingRequest, ArtistProfile, User, CalendarBlock
 from app.schemas.auth import BookingRequestCreate, BookingRequestResponse, BookingStatusUpdate , BookingRequestUpdate
 from app.api.auth import get_current_user
+from app.api.mail import send_booking_confirmation_email 
+from app.api.chat import send_message_from_booker_func
+from app.schemas.auth import MessageCreate , MessageResponse , ChatResponse
+
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -118,6 +121,7 @@ async def create_booking(
             participant_count=booking_data.participant_count,
             includes_travel=booking_data.includes_travel,
             includes_accommodation=booking_data.includes_accommodation,
+            includes_ground_transportation=booking_data.includes_ground_transportation,
             client_first_name=booking_data.client_first_name,
             client_last_name=booking_data.client_last_name,
             client_email=booking_data.client_email,
@@ -125,14 +129,62 @@ async def create_booking(
             client_company=booking_data.client_company,
             client_message=booking_data.client_message,
             status="pending"
+
         )
+
+        # Send initial message from booker
         
+                
         db.add(booking)
         db.commit()
         db.refresh(booking)
         
         logger.info(f"Booking created: ID {booking.id} for artist {artist_id}")
         
+        if booking_data.client_message:
+            print("***************************************************")
+            print("***************************************************")
+            print("booking msg ")
+            try:
+                response = send_message_from_booker_func(
+                    booking_id=booking.id,
+                    message_data=MessageCreate(message=booking_data.client_message),
+                    chat_token=booking.chat_token,
+                    db=db
+                )
+                print("***************************************************")
+                print(response)
+            except Exception as e:
+                print(f"***************************************************Failed to create initial chat message: {str(e)}")
+                logger.error(f"***************************************************Failed to create initial chat message: {str(e)}")
+                # Don't fail booking creation if message fails
+
+
+
+
+
+        # שליחת מייל אישור הזמנה ללקוח
+        try:
+            # קבלת שם האמן
+            artist = db.query(ArtistProfile).filter(ArtistProfile.user_id == artist_id).first()
+            artist_name = artist.stage_name if artist and artist.stage_name else "Artist"
+            
+            # שליחת מייל עם PDF
+            chat_url = f"http://localhost:3000/chat/{booking.id}/{booking.chat_token}"  # או URL אחר לצ'אט
+            message_id = send_booking_confirmation_email(
+                artist_name=artist_name,
+                booking_details=booking.to_pdf_dict(),
+                client_email=booking.client_email,
+                chat_url=chat_url
+            )
+            logger.info(f"Confirmation email sent to {booking.client_email}, message ID: {message_id}")
+        except Exception as e:
+            logger.error(f"Failed to send confirmation email: {str(e)}")
+            # לא נכשיל את ההזמנה אם המייל נכשל
+        
+
+
+
         return booking
         
     except HTTPException as e:
@@ -171,8 +223,8 @@ async def update_booking(
         booking.event_date = datetime.strptime(booking_data.event_date, "%Y-%m-%d").date()
     if booking_data.event_time:
         booking.event_time = datetime.strptime(booking_data.event_time, "%H:%M").time()
-    if booking_data.duration:
-        booking.duration = booking_data.duration
+    if booking_data.performance_duration:
+        booking.performance_duration = booking_data.performance_duration
     if booking_data.budget:
         booking.budget = booking_data.budget
 
@@ -231,6 +283,55 @@ async def get_booking(
         )
     
     return booking
+
+
+
+
+
+
+@router.get("/chat/{booking_id}/getbookingchat/booker", response_model=BookingRequestResponse)
+async def get_booking(
+    booking_id: int,
+    chat_token: str = Query(..., description="Chat token from booking request"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get a specific booking by ID and chat token.
+    Checks if both match, and if the current user has permission.
+    """
+    print("*******************************************************get_booking")
+    booking = (
+        db.query(BookingRequest)
+        .options(
+            joinedload(BookingRequest.artist).joinedload(ArtistProfile.user)
+        )
+        .filter(
+            BookingRequest.id == booking_id,
+            BookingRequest.chat_token == chat_token
+        )
+        .first()
+    )
+
+    if not booking:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Booking not found or chat token does not match"
+        )
+
+    
+   
+    resp = BookingRequestResponse.model_validate(booking)
+    return resp.model_copy(update={
+        "artist_stage_name": booking.artist.stage_name if booking.artist else None,
+    })
+
+
+
+
+
+
+
+
 
 @router.put("/{booking_id}/status", response_model=BookingRequestResponse)
 async def update_booking_status(

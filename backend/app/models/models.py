@@ -1,10 +1,17 @@
 from datetime import datetime
 from sqlalchemy import (
     Column, Integer, String, DateTime, Boolean,
-    ForeignKey, Numeric, Text, Date, Time
+    ForeignKey, Numeric, Text, Date, Time , Index, func
 )
 from sqlalchemy.orm import relationship
 from app.core.db import Base  # שים לב: מייבא מ-app.core.db את Base
+
+
+
+import uuid
+
+def generate_uuid():
+    return str(uuid.uuid4())
 
 class User(Base):
     __tablename__ = "users"
@@ -67,6 +74,7 @@ class BookingRequest(Base):
     participant_count = Column(Integer, nullable=False)
     includes_travel = Column(Boolean, default=False)
     includes_accommodation = Column(Boolean, default=False)
+    includes_ground_transportation = Column(Boolean, default=False)
     client_first_name = Column(String(100), nullable=False)
     client_last_name = Column(String(100), nullable=False)
     client_email = Column(String(255), nullable=False)
@@ -76,9 +84,34 @@ class BookingRequest(Base):
     status = Column(String(50), default="pending")  # pending, accepted, rejected, cancelled
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    chat_token = Column(String, unique=True, default=generate_uuid, index=True)
 
     artist = relationship("ArtistProfile", back_populates="bookings")
     messages = relationship("ChatMessage", back_populates="booking", cascade="all, delete-orphan")
+
+
+
+    def to_pdf_dict(self) -> dict:
+        return {
+            "Event Date": self.event_date.strftime("%Y-%m-%d"),
+            "Event Time": self.event_time.strftime("%H:%M"),
+            "Time Zone": self.time_zone,
+            "Budget": f"{self.budget} {self.currency}",
+            "Venue": self.venue_name,
+            "City": self.city,
+            "Country": self.country,
+            "Performance Duration": f"{self.performance_duration} minutes",
+            "Participants": self.participant_count,
+            "Includes Travel": "Yes" if self.includes_travel else "No",
+            "Includes Accommodation": "Yes" if self.includes_accommodation else "No",
+            "Includes Ground Transportation": "Yes" if self.includes_ground_transportation else "No",
+            "Client Name": f"{self.client_first_name} {self.client_last_name}",
+            "Client Email": self.client_email,
+            "Client Phone": self.client_phone or "N/A",
+            "Client Company": self.client_company or "N/A",
+            "Message": self.client_message or "—"
+        }
+
 
 
 
@@ -86,13 +119,38 @@ class ChatMessage(Base):
     __tablename__ = "chat_messages"
 
     id = Column(Integer, primary_key=True, index=True)
-    booking_request_id = Column(Integer, ForeignKey("booking_requests.id"), nullable=False, index=True)
-    sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    message = Column(Text)
-    timestamp = Column(DateTime, default=datetime.utcnow)
 
-    booking = relationship("BookingRequest", back_populates="messages")
-    sender = relationship("User")
+    booking_request_id = Column(
+        Integer, ForeignKey("booking_requests.id", ondelete="CASCADE"),
+        nullable=False, index=True
+    )
+    sender_user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True, index=True
+    )
+    sender_type = Column(String(16), nullable=False)  # 'artist' | 'booker'
+
+    message = Column(Text, nullable=False)
+    # עדיף לתת ברירת מחדל מהדאטהבייס, לא רק מהאפליקציה:
+    timestamp = Column(DateTime, server_default=func.now(), nullable=False, index=True)
+    is_read = Column(Boolean, default=False, nullable=False, index=True)
+
+    # קשרים
+    booking = relationship(
+        "BookingRequest",
+        back_populates="messages",
+        passive_deletes=True,
+    )
+    sender = relationship(
+        "User",
+        foreign_keys=[sender_user_id],   # <<< חשוב לחד-משמעיות
+        passive_deletes=True,
+    )
+
+    __table_args__ = (
+        Index("ix_chat_messages_booking_ts", "booking_request_id", "timestamp"),
+    )
+
 
 class CalendarBlock(Base):
     __tablename__ = "calendar_blocks"

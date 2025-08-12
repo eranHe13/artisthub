@@ -4,122 +4,138 @@ from fastapi import Form
 from sqlalchemy.orm import Session
 import json
 from typing import List
+from datetime import date, datetime
+from decimal import Decimal
+from fastapi.encoders import jsonable_encoder
 
 from app.core.db import get_db
 from app.models.models import ArtistProfile, User, BookingRequest
-from app.schemas.auth import ArtistProfileUpdate, ArtistProfileResponse, ArtistDashboardResponse, BookingRequestResponse
+from app.schemas.auth import ArtistProfileUpdate, ArtistProfileOut, ArtistDashboardResponse, BookingRequestResponse  , ArtistDashboardStats
 from app.api.auth import get_current_user
 router = APIRouter()
 
 
 
-@router.get("/me", response_model=ArtistProfileResponse, status_code=200, summary="Get artist profile")
+@router.get("/me", response_model=ArtistProfileOut, status_code=200, summary="Get artist profile")
 async def get_artist_profile(
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    try:
-        profile = db.query(ArtistProfile).filter(ArtistProfile.user_id == current_user.id).first()
-        if not profile:
-            # Return empty profile if none exists
-            return ArtistProfileResponse(
-                user_id=current_user.id,
-                stage_name="",
-                bio="",
-                genres="",
-                social_links="{}",
-                min_price=0,
-                photo="",
-                currency="USD"
-            )
-        return profile
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+    profile = (
+        db.query(ArtistProfile)
+          .filter(ArtistProfile.user_id == current_user.id)
+          .first()
+    )
+    if profile is None:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    # אפשר להחזיר את ה־ORM ישירות, ה־response_model ידאג להמרה (from_attributes=True)
+    return profile
+
+# עדיף מודל מפורש לסטטיסטיקות
+
 
 @router.get("/dashboard", response_model=ArtistDashboardResponse, status_code=200, summary="Get artist dashboard data")
 async def get_artist_dashboard(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """
-    Get complete artist dashboard data including profile and all bookings
-    """
     try:
-        # Get artist profile
+        # פרופיל אמן
         profile = db.query(ArtistProfile).filter(ArtistProfile.user_id == current_user.id).first()
         if not profile:
-            
             raise HTTPException(status_code=404, detail="Profile not found")
-        
-        # Get all bookings for this artist
-        bookings = db.query(BookingRequest).filter(
-            BookingRequest.artist_id == current_user.id
-        ).order_by(BookingRequest.event_date.desc()).all()
-        
-        # Calculate dashboard statistics
-        total_requests = len(bookings)
-        pending = len([b for b in bookings if b.status == 'pending'])
-        accepted = len([b for b in bookings if b.status == 'accepted'])
-        cancelled = len([b for b in bookings if b.status == 'cancelled'])
-        
-        # Calculate active bookings (accepted and future dates)
-        from datetime import date
-        active_bookings = len([b for b in bookings if b.status == 'accepted' and b.event_date >= date.today()])
-        
-        # Calculate total earnings from accepted bookings
-        total_earnings = sum([b.budget for b in bookings if b.status == 'accepted'])
-        
-        # Calculate this month's earnings
-        from datetime import datetime
-        current_month = datetime.now().month
-        current_year = datetime.now().year
-        this_month_earnings = sum([
-            b.budget for b in bookings 
-            if b.status == 'accepted' and 
-            b.event_date.month == current_month and 
-            b.event_date.year == current_year
-        ])
-        
-        # Calculate average booking fee
-        avg_fee = total_earnings / accepted if accepted > 0 else 0
-        
-        stats = {
-            "total_requests": total_requests,
-            "active_bookings": active_bookings,
-            "pending": pending,
-            "accepted": accepted,
-            "cancelled": cancelled,
-            "total_earnings": total_earnings,
-            "this_month_earnings": this_month_earnings,
-            "avg_booking_fee": round(avg_fee, 2),
-            "total_bookings": accepted
-        }
-        
-        # Convert bookings to use the from_orm method for proper serialization
-        serialized_bookings = [BookingRequestResponse.from_orm(booking) for booking in bookings]
-        
-        # Convert profile to proper format
-        profile_response = ArtistProfileResponse(
-            user_id=profile.user_id,
-            stage_name=profile.stage_name or "",
-            bio=profile.bio or "",
-            genres=profile.genres or "",
-            social_links=profile.social_links or "{}",
-            min_price=profile.min_price or 0,
-            currency=profile.currency or "USD",
-            photo=profile.photo or ""
+
+        # כל הבקינגים לאמן
+        bookings = (
+            db.query(BookingRequest)
+            .filter(BookingRequest.artist_id == current_user.id)
+            .order_by(BookingRequest.event_date.desc())
+            .all()
         )
 
+        # סטטיסטיקות
+        total_requests = len(bookings)
+        pending = sum(1 for b in bookings if b.status == "pending")
+        accepted = sum(1 for b in bookings if b.status == "accepted")
+        cancelled = sum(1 for b in bookings if b.status == "cancelled")
+
+        today = date.today()
+        active_bookings = sum(1 for b in bookings if b.status == "accepted" and b.event_date >= today)
+
+        def to_float(x) -> float:
+            if x is None:
+                return 0.0
+            if isinstance(x, Decimal):
+                return float(x)
+            return float(x)
+
+        total_earnings = to_float(sum((b.budget or 0) for b in bookings if b.status == "accepted"))
+        now = datetime.now()
+        this_month_earnings = to_float(sum(
+            (b.budget or 0) for b in bookings
+            if b.status == "accepted" and b.event_date.month == now.month and b.event_date.year == now.year
+        ))
+        avg_fee = total_earnings / accepted if accepted > 0 else 0.0
+
+        stats = ArtistDashboardStats(
+            total_requests=total_requests,
+            active_bookings=active_bookings,
+            pending=pending,
+            accepted=accepted,
+            cancelled=cancelled,
+            total_earnings=total_earnings,
+            this_month_earnings=this_month_earnings,
+            avg_booking_fee=round(avg_fee, 2),
+            total_bookings=accepted,
+        )
+
+        # המרת BOOKINGS לפידנטיק (v2): model_validate(..., from_attributes=True)
+        serialized_bookings: List[BookingRequestResponse] = [
+            BookingRequestResponse.model_validate(b, from_attributes=True) for b in bookings
+        ]
+
+        # חשוב: למלא גם id/created_at/updated_at — שדות חובה בסכמה שלך
+        profile_response = ArtistProfileOut(
+            id=profile.id,
+            user_id=profile.user_id,
+            stage_name=profile.stage_name or None,
+            bio=profile.bio or None,
+            genres=profile.genres or None,
+            social_links=profile.social_links or None,  # הוולידטור יטפל אם זו מחרוזת JSON
+            min_price=to_float(profile.min_price) if profile.min_price is not None else None,
+            currency=profile.currency or None,
+            photo=profile.photo or None,
+            created_at=profile.created_at,
+            updated_at=profile.updated_at,
+        )
+
+        # אפשר להחזיר את האובייקט ישירות; אם עדיין יש שדה בעייתי, עטוף ב-jsonable_encoder
         return ArtistDashboardResponse(
             profile=profile_response,
             bookings=serialized_bookings,
             stats=stats
         )
-        
+
+        # לחלופין, למקרה של ספק סיריאליזציה:
+        # return JSONResponse(content=jsonable_encoder(ArtistDashboardResponse(
+        #     profile=profile_response,
+        #     bookings=serialized_bookings,
+        #     stats=stats
+        # )))
+
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
-@router.put("/me", response_model=ArtistProfileResponse, status_code=200, summary="Update artist profile")
+
+
+
+
+
+
+@router.put("/me", response_model=ArtistProfileOut, status_code=200, summary="Update artist profile")
 async def update_artist_profile(
     profile_in: ArtistProfileUpdate,
     current_user: User = Depends(get_current_user),

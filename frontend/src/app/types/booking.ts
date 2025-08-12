@@ -13,6 +13,7 @@ export interface BookingRequest {
     participant_count: number;
     includes_travel: boolean;
     includes_accommodation: boolean;
+    includes_ground_transportation: boolean;
     client_first_name: string;
     client_last_name: string;
     client_email: string;

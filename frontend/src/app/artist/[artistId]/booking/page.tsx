@@ -1,8 +1,10 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
+import { useSearchParams, useRouter } from "next/navigation";
 
 export default function BookingSubmitPage() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [artistInfo, setArtistInfo] = useState<{ min_price?: number; currency?: string }>({});
   const [form, setForm] = useState({
@@ -32,6 +34,8 @@ export default function BookingSubmitPage() {
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const searchParams = useSearchParams();
+  const artistName = searchParams.get("artistName");
   // Fetch artist information on component mount
   useEffect(() => {
     const fetchArtistInfo = async () => {
@@ -112,6 +116,7 @@ export default function BookingSubmitPage() {
         participant_count: parseInt(form.participant_count),
         includes_travel: form.includes_travel,
         includes_accommodation: form.includes_accommodation,
+        includes_ground_transportation: form.includes_ground_transportation,
         client_first_name: form.client_first_name,
         client_last_name: form.client_last_name,
         client_email: form.client_email,
@@ -156,7 +161,7 @@ export default function BookingSubmitPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-12 px-2 flex flex-col items-center">
       <div className="max-w-2xl w-full">
         <button className="mb-4 px-4 py-2 bg-black-100 rounded !text-black !border-black" onClick={handlePrev} disabled={step === 1}>&lt; Back</button>
-        <h1 className="text-3xl font-bold text-center mb-2 !text-black">Book DJ Eran</h1>
+        <h1 className="text-3xl font-bold text-center mb-2 !text-black">Book {artistName}</h1>
         <p className="text-center mb-8 text-gray-600">Complete the booking process to request this artist for your event</p>
         {/* Progress Steps */}
         <div className="flex justify-center mb-8 gap-8">
@@ -392,20 +397,24 @@ export default function BookingSubmitPage() {
                     <div><strong>Participants:</strong> {form.participant_count}</div>
                     <div><strong>Travel Included:</strong> {form.includes_travel ? 'Yes' : 'No'}</div>
                     <div><strong>Accommodation Included:</strong> {form.includes_accommodation ? 'Yes' : 'No'}</div>
+                    <div><strong>Ground Transportation Included:</strong> {form.includes_ground_transportation ? 'Yes' : 'No'}</div>
                     <div><strong>Contact:</strong> {form.client_first_name} {form.client_last_name}</div>
                   </div>
                 </div>
-                
+            {!submitted &&(
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <button type="button" className="px-8 py-2 border rounded bg-white" onClick={handlePrev} disabled={isSubmitting}>Back to Edit</button>
-                  <button 
-                    type="submit" 
-                    className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded disabled:bg-gray-400 disabled:cursor-not-allowed" 
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? 'Submitting...' : 'Submit Booking Request'}
-                  </button>
-                </div>
+                <button type="button" className="px-8 py-2 border rounded bg-white" onClick={handlePrev} disabled={isSubmitting}>Back to Edit</button>
+                <button 
+                  type="submit" 
+                  className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded disabled:bg-gray-400 disabled:cursor-not-allowed" 
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Submitting...' : 'Submit Booking Request'}
+                </button>
+              </div>
+
+            )}
+
               </form>
             )}
             
@@ -421,8 +430,15 @@ export default function BookingSubmitPage() {
                   <p className="text-lg text-gray-600 max-w-2xl mx-auto">Your booking request has been sent to <strong>DJ Eran</strong>. You'll receive a confirmation email shortly, and the artist will respond to your request soon.</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <button className="px-8 py-2 border rounded bg-white" onClick={() => window.history.back()}>Back to Artist Profile</button>
-                  <button className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded" onClick={() => window.location.href = '/'}>Browse More Artists</button>
+                  <button 
+                    className="px-8 py-2 border rounded bg-white" 
+                    onClick={() => {
+                      const artistId = window.location.pathname.split('/')[2];
+                      router.push(`/artist/${artistId}`);
+                    }}
+                  >
+                    Back to Artist Profile
+                  </button>
                 </div>
               </div>
             )}

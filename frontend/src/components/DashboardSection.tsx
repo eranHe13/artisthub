@@ -200,9 +200,10 @@ export function DashboardSection({
             </div>
 
             {/* Quick Actions & Stats */}
+
             <div className="space-y-6">
-              {/* Quick Actions */}
-              <div className="bg-[#232733] rounded-2xl shadow-lg border border-gray-800 p-6">
+              
+              {/* <div className="bg-[#232733] rounded-2xl shadow-lg border border-gray-800 p-6">
                 <h3 className="font-bold text-lg text-white mb-4">Quick Actions</h3>
                 <div className="space-y-3">
                   <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2">
@@ -218,7 +219,7 @@ export function DashboardSection({
                     Check Earnings
                   </button>
                 </div>
-              </div>
+              </div> */}
 
               {/* Status Breakdown */}
               <div className="bg-[#232733] rounded-2xl shadow-lg border border-gray-800 p-6">

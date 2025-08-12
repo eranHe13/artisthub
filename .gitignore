@@ -118,6 +118,8 @@ backend/app/*.db
 backend/app/*.sqlite*
 backend/app/core/data/*.db
 backend/app/core/data/*.sqlite*
+backend/app/core/data/*.db-shm
+backend/app/core/data/*.db-wal
 
 # ===========================================
 # NODE.JS / FRONTEND
@@ -397,6 +399,8 @@ backend/media/
 backend/static/uploads/
 backend/tmp/
 backend/temp/
+backend/app/api/credentials.json
+backend/mylog.txt
 
 # Backend testing
 backend/test_*.py

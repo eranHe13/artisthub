@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { User as UserIcon, Music, Link as LinkIcon, LogOut } from "lucide-react";
-import { useAuth } from "../../../lib/auth";
+import { useAuth } from "@/utils/auth";
 
 // SVG icons for music platforms
 const SpotifyIcon = () => (

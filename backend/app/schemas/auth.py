@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, HttpUrl, field_serializer , field_validator
+from pydantic import BaseModel, EmailStr, HttpUrl, field_serializer , field_validator  
 from typing import List, Optional
 from datetime import datetime, date, time
 from typing import List, Optional, Dict, Any
@@ -223,3 +223,7 @@ class MessageResponse(BaseModel):
 class ChatResponse(BaseModel):
     messages: List[MessageResponse]
     total_count: int
+
+
+
+

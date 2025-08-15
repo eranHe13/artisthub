@@ -35,7 +35,7 @@ export default function AuthCallback() {
         }
 
         // Send the code to backend for processing
-        const response = await fetch(`http://localhost:8000/api/auth/google/callback?code=${code}`, {
+        const response = await fetch(`/api/auth/google/callback?code=${code}`, {
           method: 'GET',
           credentials: 'include', // Include cookies
         });

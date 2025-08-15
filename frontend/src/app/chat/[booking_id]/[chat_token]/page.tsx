@@ -71,7 +71,7 @@ export default function ChatPage() {
       return
 
     try {
-      const response = await fetch(`http://localhost:8000/api/bookings/chat/${bookingId}/getbookingchat/booker?chat_token=${chatToken}`)
+      const response = await fetch(`/api/bookings/chat/${bookingId}/getbookingchat/booker?chat_token=${chatToken}`)
       if (response.ok) {
         const data = await response.json()
         console.log("booking = " , data)
@@ -92,7 +92,7 @@ export default function ChatPage() {
     }
     
     try {
-      const response = await fetch(`http://localhost:8000/api/chat/${bookingId}/getmessages/booker?chat_token=${chatToken}`)
+      const response = await fetch(`/api/chat/${bookingId}/getmessages/booker?chat_token=${chatToken}`)
 
       if (!response.ok) {
         throw new Error('Failed to fetch messages')
@@ -115,7 +115,7 @@ export default function ChatPage() {
     console.log("newMessage = " , newMessage)
     setSending(true)
     try {
-      const response = await fetch(`http://localhost:8000/api/chat/${bookingId}/messages/booker?chat_token=${chatToken}`, {
+      const response = await fetch(`/api/chat/${bookingId}/messages/booker?chat_token=${chatToken}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

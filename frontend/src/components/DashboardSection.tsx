@@ -65,7 +65,7 @@ export function DashboardSection({
           Dashboard
         </h1>
         <div className="text-sm text-gray-400">
-          Welcome back! Here's what's happening with your bookings.
+          Welcome back! Here is what is happening with your bookings.
           <div className="text-xs text-gray-500 mt-1">
             Debug: {bookings.length} bookings loaded
           </div>

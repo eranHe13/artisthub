@@ -36,7 +36,7 @@ export function useArtistProfile(): UseArtistProfileReturn {
   const fetchArtistProfile = useCallback(async () => {
     try {
       setProfileLoading(true);
-      const response = await fetch('http://localhost:8000/api/artist/me', {
+      const response = await fetch('/api/artist/me', {
         credentials: 'include',
       });
       
@@ -55,7 +55,7 @@ export function useArtistProfile(): UseArtistProfileReturn {
 
   const updateArtistProfile = useCallback(async (profileData: any): Promise<boolean> => {
     try {
-      const response = await fetch('http://localhost:8000/api/artist/me', {
+      const response = await fetch('/api/artist/me', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

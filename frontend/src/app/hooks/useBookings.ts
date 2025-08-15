@@ -18,7 +18,7 @@ export function useBookings(): UseBookingsReturn {
   const fetchBookings = useCallback(async () => {
     try {
       setBookingsLoading(true);
-      const response = await fetch('http://localhost:8000/api/artist/bookings', {
+      const response = await fetch('/api/artist/bookings', {
         credentials: 'include',
       });
       
@@ -37,7 +37,7 @@ export function useBookings(): UseBookingsReturn {
 
   const updateBookingDetails = useCallback(async (bookingId: number, newDetails: any): Promise<boolean> => {
     try {
-      const response = await fetch(`http://localhost:8000/api/bookings/${bookingId}`, {
+      const response = await fetch(`/api/bookings/${bookingId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -68,7 +68,7 @@ export function useBookings(): UseBookingsReturn {
 
   const updateBookingStatus = useCallback(async (bookingId: number, newStatus: string): Promise<boolean> => {
     try {
-      const response = await fetch(`http://localhost:8000/api/bookings/${bookingId}/status`, {
+      const response = await fetch(`/api/bookings/${bookingId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

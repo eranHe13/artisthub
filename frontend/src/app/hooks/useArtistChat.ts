@@ -25,7 +25,7 @@ export function useArtistChat(bookingId?: string) {
     if (!bookingId) return;
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:8000/api/chat/${bookingId}/messages/artist`, {
+      const res = await fetch(`/api/chat/${bookingId}/messages/artist`, {
         credentials: "include", // שליחת קוקי אימות
       });
       if (!res.ok) throw new Error(`Failed to fetch artist messages (${res.status})`);
@@ -43,7 +43,7 @@ export function useArtistChat(bookingId?: string) {
   const sendArtistMessage = useCallback(
     async (message: string) => {
       if (!bookingId) throw new Error("Missing bookingId");
-      const res = await fetch(`http://localhost:8000/api/chat/${bookingId}/messages/artist`, {
+      const res = await fetch(`/api/chat/${bookingId}/messages/artist`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

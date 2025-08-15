@@ -1,0 +1,212 @@
+{
+  "project": {
+    "name": "Doron",
+    "languages": ["Python", "TypeScript", "TSX", "Nginx conf", "HTML/Jinja"],
+    "frameworks": ["FastAPI", "SQLAlchemy", "Next.js", "React"],
+    "envs": ["dev", "prod"],
+    "manifests": [
+      "frontend/package.json",
+      "frontend/tsconfig.json",
+      "nginx.conf"
+    ]
+  },
+  "inventory": [
+    { "path": "backend/app/main.py", "lang": "Python", "size": 0, "role": "FastAPI app + routers + CORS" },
+    { "path": "backend/app/core/db.py", "lang": "Python", "size": 0, "role": "DB engine/session config" },
+    { "path": "backend/app/models/models.py", "lang": "Python", "size": 0, "role": "ORM models" },
+    { "path": "backend/app/schemas/auth.py", "lang": "Python", "size": 0, "role": "Pydantic schemas" },
+    { "path": "backend/app/api/auth.py", "lang": "Python", "size": 0, "role": "OAuth + JWT session" },
+    { "path": "backend/app/api/profile.py", "lang": "Python", "size": 0, "role": "Artist profile + dashboard" },
+    { "path": "backend/app/api/bookings.py", "lang": "Python", "size": 0, "role": "Bookings CRUD + email + chat token" },
+    { "path": "backend/app/api/chat.py", "lang": "Python", "size": 0, "role": "Chat messages (artist/booker)" },
+    { "path": "backend/app/api/public.py", "lang": "Python", "size": 0, "role": "Public artist profile" },
+    { "path": "backend/app/api/mail.py", "lang": "Python", "size": 0, "role": "PDF gen + Gmail send" },
+    { "path": "frontend/src/app/**/*.tsx", "lang": "TSX", "size": 0, "role": "Pages" },
+    { "path": "frontend/src/components/**/*.tsx", "lang": "TSX", "size": 0, "role": "UI components" },
+    { "path": "frontend/src/app/hooks/**/*.ts", "lang": "TS", "size": 0, "role": "Custom hooks / API" },
+    { "path": "frontend/next.config.ts", "lang": "TS", "size": 0, "role": "Rewrites + headers" },
+    { "path": "nginx.conf", "lang": "conf", "size": 0, "role": "Reverse proxy + security" }
+  ],
+  "architecture": {
+    "layers": ["frontend-ui", "backend-api", "database"],
+    "modules": ["auth", "profile", "bookings", "chat", "public", "mailer"],
+    "data_flow": [
+      { "from": "frontend-ui", "to": "backend-api", "via": "HTTP /api/*" },
+      { "from": "backend-api", "to": "database", "via": "SQLAlchemy ORM" },
+      { "from": "auth", "to": "Google OAuth", "via": "OAuth2" },
+      { "from": "mailer", "to": "Gmail API", "via": "REST" },
+      { "from": "frontend-ui", "to": "Cloudinary", "via": "HTTPS upload" }
+    ],
+    "external_services": ["Google OAuth", "Gmail API", "Cloudinary"]
+  },
+  "db": {
+    "entities": [
+      "User", "UserSession", "ArtistProfile", "BookingRequest", "ChatMessage", "CalendarBlock", "Earning", "Notification"
+    ],
+    "relations": [
+      { "from": "User", "to": "UserSession", "type": "1-to-many" },
+      { "from": "User", "to": "ArtistProfile", "type": "1-to-1" },
+      { "from": "ArtistProfile", "to": "BookingRequest", "type": "1-to-many" },
+      { "from": "BookingRequest", "to": "ChatMessage", "type": "1-to-many" }
+    ]
+  },
+  "quality": {
+    "complexity_hotspots": [
+      { "path": "backend/app/api/bookings.py", "reason": "מספר תהליכי משנה (ולידציה, יצירה, שליחת מייל, הודעת צ'אט)" }
+    ],
+    "duplications": [],
+    "dead_code": []
+  },
+  "performance": {
+    "issues": [
+      { "id": "P-001", "title": "WeasyPrint PDF סינכרוני", "location": {"path": "backend/app/api/mail.py", "line": 47}, "note": "שקול תור רקע" },
+      { "id": "P-002", "title": "SQLite בפרוד", "location": {"path": "backend/app/core/db.py", "line": 11}, "note": "להחליף ל-PostgreSQL" }
+    ],
+    "metrics": { "db_engine": "sqlite (dev)" }
+  },
+  "security": {
+    "findings": [
+      { "id": "F-001", "title": "Cookie flags לא עקביים", "severity": 4, "location": {"path": "backend/app/api/auth.py", "line": 100} },
+      { "id": "F-003", "title": "CORS קשיח", "severity": 3, "location": {"path": "backend/app/main.py", "line": 33} },
+      { "id": "F-006", "title": "חסר CSRF", "severity": 5, "location": {"path": "backend", "line": 0} },
+      { "id": "F-007", "title": "CSP עם unsafe-inline/eval", "severity": 3, "location": {"path": "nginx.conf", "line": 36} }
+    ],
+    "secrets": [],
+    "dependency_risks": [
+      { "manifest": "frontend/package.json", "deps": ["next@15.4.2", "react@19.1.0", "next-auth@4.24.11"] }
+    ]
+  },
+  "observability": {
+    "logging": { "level": "INFO", "issues": ["print/console.log בשימוש" ] },
+    "metrics": {},
+    "tracing": {}
+  },
+  "testing": {
+    "coverage": {},
+    "gaps": ["אין בדיקות יחידה/אינטגרציה מזוהות"],
+    "types": []
+  },
+  "ci_cd": {
+    "pipelines": [],
+    "gates": [],
+    "issues": ["אין תצורת CI"]
+  },
+  "infrastructure": {
+    "docker": {},
+    "k8s": {},
+    "iac": {}
+  },
+  "frontend": {
+    "a11y": [],
+    "i18n": ["אין שכבת i18n; מחרוזות מעורבות"],
+    "bundles": { "rewrites": "/api -> :8000" }
+  },
+  "compliance": {
+    "pii": ["email/name/phone"],
+    "retention": { "logs": "N/A" },
+    "policies": []
+  },
+  "findings": [
+    {
+      "id": "F-001",
+      "title": "Cookie flags לא עקביים בין set-cookie למחיקה",
+      "severity": 4,
+      "impact": "Logout לא יעבוד עקביותית; סיכון אבטחתי",
+      "effort": "S",
+      "confidence": "High",
+      "location": { "path": "backend/app/api/auth.py", "line": 100 },
+      "code_excerpt": "redirect_response.set_cookie(... secure=False ...); response.delete_cookie(... secure=True ...)",
+      "recommendation": "יישור flags לפי ENV (secure/samesite)"
+    },
+    {
+      "id": "F-003",
+      "title": "CORS קשיח ידנית",
+      "severity": 3,
+      "impact": "כשלים בין סביבות",
+      "effort": "S",
+      "confidence": "High",
+      "location": { "path": "backend/app/main.py", "line": 33 },
+      "code_excerpt": "allow_origins=[\"http://localhost:3000\", ...]",
+      "recommendation": "טעינת מקורות מה-ENV"
+    },
+    {
+      "id": "F-004",
+      "title": "echo=True למנוע SQL",
+      "severity": 2,
+      "impact": "דליפת מידע/ביצועים",
+      "effort": "S",
+      "confidence": "High",
+      "location": { "path": "backend/app/core/db.py", "line": 24 },
+      "code_excerpt": "engine = create_engine(... echo=True)",
+      "recommendation": "echo לפי ENV (ברירת מחדל false)"
+    },
+    {
+      "id": "F-006",
+      "title": "חסר CSRF ל- Cookie Auth",
+      "severity": 5,
+      "impact": "סיכון CSRF בבקשות state-changing",
+      "effort": "M",
+      "confidence": "Medium",
+      "location": { "path": "backend", "line": 0 },
+      "code_excerpt": "N/A",
+      "recommendation": "Double Submit Token/CSRF header או Bearer Auth"
+    }
+  ],
+  "prioritization": [
+    { "id": "F-006", "score": { "impact": 5, "effort": 2, "confidence": 3 } },
+    { "id": "F-001", "score": { "impact": 4, "effort": 1, "confidence": 3 } },
+    { "id": "F-003", "score": { "impact": 3, "effort": 1, "confidence": 3 } },
+    { "id": "F-004", "score": { "impact": 2, "effort": 1, "confidence": 3 } }
+  ],
+  "roadmap": {
+    "now_2w": [
+      "Align Cookie/CORS/CSRF",
+      "Disable SQL echo in prod",
+      "Remove prints/console.log",
+      "Add backend unit tests"
+    ],
+    "30d": [
+      "Add CI (GitHub Actions)",
+      "Docker Compose (api+web+db)",
+      "Basic metrics/logging JSON",
+      "Frontend i18n"
+    ],
+    "60d": [
+      "PostgreSQL + Alembic",
+      "Queues for PDF/Mail"
+    ],
+    "90d": [
+      "Playwright e2e",
+      "CD pipeline",
+      "SLA monitoring"
+    ]
+  },
+  "appendices": {
+    "todo": [
+      { "path": "backend/app/api/bookings.py", "line": 28, "text": "MOVE THE VALIDATION TO THE FRONTEND" },
+      { "path": "backend/app/main.py", "line": 13, "text": "TODO routers" }
+    ],
+    "skipped": [
+      "backend/app/assest/booking_summary_*.pdf",
+      "frontend/package-lock.json"
+    ],
+    "file_index": [
+      "backend/app/main.py",
+      "backend/app/core/db.py",
+      "backend/app/models/models.py",
+      "backend/app/schemas/auth.py",
+      "backend/app/api/auth.py",
+      "backend/app/api/profile.py",
+      "backend/app/api/bookings.py",
+      "backend/app/api/chat.py",
+      "backend/app/api/public.py",
+      "backend/app/api/mail.py",
+      "frontend/src/app/**",
+      "frontend/src/components/**",
+      "frontend/next.config.ts",
+      "nginx.conf"
+    ]
+  }
+}
+
+

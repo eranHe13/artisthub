@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -41,7 +42,7 @@ export default function BookingSubmitPage() {
     const fetchArtistInfo = async () => {
       try {
         const artistId = window.location.pathname.split('/')[2];
-        const response = await fetch(`http://localhost:8000/api/public/artist/${artistId}`);
+        const response = await fetch(`/api/public/artist/${artistId}`);
         if (response.ok) {
           const data = await response.json();
           setArtistInfo({
@@ -126,7 +127,7 @@ export default function BookingSubmitPage() {
       };
 
       // Send booking request to API
-      const response = await fetch(`http://localhost:8000/api/bookings/?artist_id=${artistId}`, {
+      const response = await fetch(`/api/bookings?artist_id=${artistId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -427,7 +428,7 @@ export default function BookingSubmitPage() {
                 </div>
                 <div>
                   <h2 className="text-3xl font-bold text-gray-900 mb-4">Booking Request Submitted!</h2>
-                  <p className="text-lg text-gray-600 max-w-2xl mx-auto">Your booking request has been sent to <strong>DJ Eran</strong>. You'll receive a confirmation email shortly, and the artist will respond to your request soon.</p>
+                  <p className="text-lg text-gray-600 max-w-2xl mx-auto">Your booking request has been sent to <strong>DJ Eran</strong>. You will receive a confirmation email shortly, and the artist will respond to your request soon.</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <button 

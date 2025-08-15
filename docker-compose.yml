@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - backend/.env
+    environment:
+      # מצביעים על קובץ ה-SQLite בתוך הקונטיינר
+      DATABASE_URL: "sqlite:////app/app/core/data/database.db"
+      # אופציונלי: לוודא CORS/עוגיות מגיעים מה-ENV
+      # ALLOWED_ORIGINS: "http://localhost:3000"
+      # COOKIE_SECURE: "false"
+      # COOKIE_SAMESITE: "lax"
+    volumes:
+      # ממפים את כל התיקייה כדי לוודא שהקובץ קיים/נוצר
+      - ./backend/app/core/data:/app/app/core/data
+      # אופציונלי: אם יש assets שנכתבים לדיסק
+      # - ./backend/app/assest:/app/app/assest
+    ports:
+      - "8000:8000"
+    networks: [app_net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/ | grep Hello || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    # נוח יותר בזמן פיתוח:
+    # restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    environment:
+      NODE_ENV: production
+      # אם אתה עובד עם next.config.ts (rewrites /api -> :8000) אין צורך ב-NEXT_PUBLIC_API_BASE
+      # NEXT_PUBLIC_API_BASE: "/api"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks: [app_net]
+    # לפיתוח עם HMR:
+    volumes:
+      - ./frontend:/app
+    command: npm run dev
+    # restart: unless-stopped
+
+networks:
+  app_net:

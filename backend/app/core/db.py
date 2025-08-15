@@ -8,10 +8,7 @@ logging.basicConfig(level=logging.INFO)
 
 load_dotenv()
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "sqlite:///./app/core/data/database.db"
-)
+DATABASE_URL = os.getenv("DATABASE_URL",)
 
 # 1. הוסף timeout ל-SQLite, והפעל pool_pre_ping
 sqlite_connect_args = {}
@@ -25,7 +22,7 @@ engine = create_engine(
     DATABASE_URL,
     connect_args=sqlite_connect_args,
     pool_pre_ping=True,
-    echo=True,  # ב-prod כדאי False
+    echo=False,  # ב-prod כדאי False
     future=True
 )
 

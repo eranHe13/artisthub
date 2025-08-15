@@ -63,7 +63,7 @@ export function useDashboardData(): UseDashboardDataReturn {
       setBookingsLoading(true);
       setStatsLoading(true);
       
-      const response = await fetch('http://localhost:8000/api/artist/dashboard', {
+      const response = await fetch('/api/artist/dashboard', {
         credentials: 'include',
       });
       

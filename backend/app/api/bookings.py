@@ -11,16 +11,18 @@ from app.api.mail import send_booking_confirmation_email
 from app.api.chat import send_message_from_booker_func
 from app.schemas.auth import MessageCreate , MessageResponse , ChatResponse
 
-
+bookings_logger = logging.getLogger("app.bookings")
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 def validate_booking_data(booking_data: BookingRequestCreate, db: Session, artist_id: int) -> None:
     """Validate booking data and business rules"""
-    
+    bookings_logger.debug("Validating booking data" , extra={"booking_data": booking_data})
     # Check if artist exists
+    bookings_logger.debug("Checking if artist exists" , extra={"artist_id": artist_id})
     artist = db.query(ArtistProfile).filter(ArtistProfile.user_id == artist_id).first()
     if not artist:
+        bookings_logger.error("Artist not found" , extra={"artist_id": artist_id})
         raise HTTPException(
             status_code=404, 
             detail="Artist not found"
@@ -28,22 +30,27 @@ def validate_booking_data(booking_data: BookingRequestCreate, db: Session, artis
     ##TODO -- MOVE THE VALIDATION TO THE FRONTEND
     # Check if event date is in the future
     try:
+        bookings_logger.debug("Parsing event date" , extra={"booking_data": booking_data})
         event_date = datetime.strptime(booking_data.event_date, "%Y-%m-%d").date()
         if event_date <= date.today():
+            bookings_logger.error("Event date is in the past" , extra={"event_date": event_date})
             raise HTTPException(
                 status_code=400,
                 detail="Event date must be in the future"
             )
     except ValueError:
+        bookings_logger.error("Invalid event date format" , extra={"booking_data": booking_data})
         raise HTTPException(
             status_code=400,
             detail="Invalid event date format. Use YYYY-MM-DD"
         )
-    
+    bookings_logger.debug("Event date parsed successfully" , extra={"event_date": event_date})
     # Check if event time is valid
     try:
+        bookings_logger.debug("Parsing event time" , extra={"booking_data": booking_data})
         event_time = datetime.strptime(booking_data.event_time, "%H:%M").time()
     except ValueError:
+        bookings_logger.error("Invalid event time format" , extra={"booking_data": booking_data})
         raise HTTPException(
             status_code=400,
             detail="Invalid event time format. Use HH:MM"
@@ -51,20 +58,23 @@ def validate_booking_data(booking_data: BookingRequestCreate, db: Session, artis
         
     ##TODO -- MOVE THE VALIDATION TO THE FRONTEND
     # Check if artist is available (no calendar blocks)
+    bookings_logger.debug("Checking if artist is available" , extra={"artist_id": artist_id , "event_date": event_date , "event_time": event_time})
     existing_block = db.query(CalendarBlock).filter(
         CalendarBlock.artist_id == artist_id,
         CalendarBlock.block_date == event_date,
         CalendarBlock.start_time <= event_time,
         CalendarBlock.end_time >= event_time
     ).first()
-    
+
     if existing_block:
+        bookings_logger.error("Artist is not available at the requested time" , extra={"artist_id": artist_id , "event_date": event_date , "event_time": event_time})
         raise HTTPException(
             status_code=409,
             detail="Artist is not available at the requested time"
         )
     ##TODO -- MOVE THE VALIDATION TO THE FRONTEND
     # Check if budget meets minimum price
+    bookings_logger.debug("Checking if budget meets minimum price" , extra={"artist_id": artist_id , "event_date": event_date , "event_time": event_time})
     if artist.min_price and booking_data.budget < float(artist.min_price):
         raise HTTPException(
             status_code=400,
@@ -72,20 +82,23 @@ def validate_booking_data(booking_data: BookingRequestCreate, db: Session, artis
         )
     
     # Check for duplicate bookings (same artist, date, time)
+    bookings_logger.debug("Checking for duplicate bookings" , extra={"artist_id": artist_id , "event_date": event_date , "event_time": event_time})
     existing_booking = db.query(BookingRequest).filter(
         BookingRequest.artist_id == artist_id,
         BookingRequest.event_date == event_date,
         BookingRequest.event_time == event_time,
         BookingRequest.status.in_(["pending", "accepted"])
     ).first()
-    
+
     if existing_booking:
+        bookings_logger.error("A booking already exists for this artist at the requested time" , extra={"artist_id": artist_id , "event_date": event_date , "event_time": event_time})
         raise HTTPException(
             status_code=409,
             detail="A booking already exists for this artist at the requested time"
         )
+    bookings_logger.debug("Booking data validated successfully" , extra={"artist_id": artist_id , "event_date": event_date , "event_time": event_time})
 
-@router.post("/", response_model=BookingRequestResponse, status_code=201)
+@router.post("", response_model=BookingRequestResponse, status_code=201)
 async def create_booking(
     booking_data: BookingRequestCreate,
     artist_id: int,
@@ -97,16 +110,19 @@ async def create_booking(
     - **artist_id**: ID of the artist to book
     - **booking_data**: Complete booking information
     """
+    bookings_logger.debug("Creating booking" , extra={"booking_data": booking_data , "artist_id": artist_id})
     try:
         # Validate booking data and business rules
+        bookings_logger.debug("Validating booking data and business rules" , extra={"booking_data": booking_data , "artist_id": artist_id})
         validate_booking_data(booking_data, db, artist_id)
-        
+        bookings_logger.debug("Booking data validated successfully" , extra={"booking_data": booking_data , "artist_id": artist_id})
         # Parse date and time
         ## HOWT TO PARSE IT BACK 
         event_date = datetime.strptime(booking_data.event_date, "%Y-%m-%d").date()
         event_time = datetime.strptime(booking_data.event_time, "%H:%M").time()
         
         # Create booking request
+        bookings_logger.debug("Creating booking request" , extra={"booking_data": booking_data , "artist_id": artist_id})
         booking = BookingRequest(
             artist_id=artist_id,
             event_date=event_date,
@@ -138,13 +154,12 @@ async def create_booking(
         db.add(booking)
         db.commit()
         db.refresh(booking)
+        bookings_logger.debug("Booking created" , extra={"booking_id": booking.id , "artist_id": artist_id})
         
-        logger.info(f"Booking created: ID {booking.id} for artist {artist_id}")
+        
         
         if booking_data.client_message:
-            print("***************************************************")
-            print("***************************************************")
-            print("booking msg ")
+            bookings_logger.debug("Sending initial message from booker" , extra={"booking_id": booking.id , "artist_id": artist_id})
             try:
                 response = send_message_from_booker_func(
                     booking_id=booking.id,
@@ -152,11 +167,9 @@ async def create_booking(
                     chat_token=booking.chat_token,
                     db=db
                 )
-                print("***************************************************")
-                print(response)
+                bookings_logger.debug("Initial message sent from booker" , extra={"booking_id": booking.id , "artist_id": artist_id})
             except Exception as e:
-                print(f"***************************************************Failed to create initial chat message: {str(e)}")
-                logger.error(f"***************************************************Failed to create initial chat message: {str(e)}")
+                bookings_logger.error("Failed to send initial message from booker" , extra={"booking_id": booking.id , "artist_id": artist_id , "error": e})
                 # Don't fail booking creation if message fails
 
 
@@ -165,7 +178,9 @@ async def create_booking(
 
         # שליחת מייל אישור הזמנה ללקוח
         try:
+            bookings_logger.debug("Sending booking confirmation email" , extra={"booking_id": booking.id , "artist_id": artist_id})
             # קבלת שם האמן
+
             artist = db.query(ArtistProfile).filter(ArtistProfile.user_id == artist_id).first()
             artist_name = artist.stage_name if artist and artist.stage_name else "Artist"
             
@@ -177,14 +192,14 @@ async def create_booking(
                 client_email=booking.client_email,
                 chat_url=chat_url
             )
-            logger.info(f"Confirmation email sent to {booking.client_email}, message ID: {message_id}")
+            bookings_logger.debug("Confirmation email sent to {booking.client_email}, message ID: {message_id}" , extra={"booking_id": booking.id , "artist_id": artist_id , "client_email": booking.client_email , "message_id": message_id})
         except Exception as e:
-            logger.error(f"Failed to send confirmation email: {str(e)}")
+            bookings_logger.error("Failed to send confirmation email" , extra={"booking_id": booking.id , "artist_id": artist_id , "error": e})
             # לא נכשיל את ההזמנה אם המייל נכשל
         
 
 
-
+        bookings_logger.debug("Booking created successfully" , extra={"booking_id": booking.id , "artist_id": artist_id})
         return booking
         
     except HTTPException as e:
@@ -192,7 +207,7 @@ async def create_booking(
         raise
     except Exception as e:
         db.rollback()
-        logger.error(f"Error creating booking: {str(e)}")
+        bookings_logger.error("Error creating booking" , extra={"booking_id": booking.id , "artist_id": artist_id , "error": e})
         raise HTTPException(
             status_code=500,
             detail="Internal server error while creating booking"
@@ -208,13 +223,16 @@ async def update_booking(
     """
     Update a booking request
     """
+    bookings_logger.debug("Updating booking" , extra={"booking_id": booking_id , "booking_data": booking_data})
     booking = db.query(BookingRequest).filter(BookingRequest.id == booking_id).first()
     if not booking:
+        bookings_logger.error("Booking not found" , extra={"booking_id": booking_id})
         raise HTTPException(
             status_code=404,
             detail="Booking not found"
         )
     if booking.artist_id != current_user.id:
+        bookings_logger.error("You can only update your own bookings" , extra={"booking_id": booking_id , "current_user_id": current_user.id})
         raise HTTPException(
             status_code=403,
             detail="You can only update your own bookings"
@@ -230,7 +248,7 @@ async def update_booking(
 
     db.commit()
     db.refresh(booking)
-
+    bookings_logger.debug("Booking updated successfully" , extra={"booking_id": booking_id})
     return booking
 
 
@@ -245,8 +263,10 @@ async def get_artist_bookings(
     """
     Get all bookings for an artist (artist must be authenticated)
     """
+    bookings_logger.debug("Getting artist bookings" , extra={"artist_id": artist_id})
     # Verify the authenticated user is the artist
     if current_user.id != artist_id:
+        bookings_logger.error("You can only view your own bookings" , extra={"artist_id": artist_id , "current_user_id": current_user.id})
         raise HTTPException(
             status_code=403,
             detail="You can only view your own bookings"
@@ -255,7 +275,7 @@ async def get_artist_bookings(
     bookings = db.query(BookingRequest).filter(
         BookingRequest.artist_id == artist_id
     ).order_by(BookingRequest.event_date.desc()).all()
-    
+    bookings_logger.debug("Artist bookings fetched successfully" , extra={"artist_id": artist_id , "bookings": bookings})
     return bookings
 
 @router.get("/{booking_id}", response_model=BookingRequestResponse)
@@ -267,9 +287,11 @@ async def get_booking(
     """
     Get a specific booking by ID
     """
+    bookings_logger.debug("Getting booking" , extra={"booking_id": booking_id , "current_user_id": current_user.id})
     booking = db.query(BookingRequest).filter(BookingRequest.id == booking_id).first()
     
     if not booking:
+        bookings_logger.error("Booking not found" , extra={"booking_id": booking_id , "current_user_id": current_user.id})
         raise HTTPException(
             status_code=404,
             detail="Booking not found"
@@ -277,11 +299,12 @@ async def get_booking(
     
     # Check if user has permission to view this booking
     if booking.artist_id != current_user.id and booking.client_email != current_user.email:
+        bookings_logger.error("You don't have permission to view this booking" , extra={"booking_id": booking_id , "current_user_id": current_user.id})
         raise HTTPException(
             status_code=403,
             detail="You don't have permission to view this booking"
         )
-    
+    bookings_logger.debug("Booking fetched successfully" , extra={"booking_id": booking_id , "current_user_id": current_user.id})
     return booking
 
 
@@ -299,7 +322,7 @@ async def get_booking(
     Get a specific booking by ID and chat token.
     Checks if both match, and if the current user has permission.
     """
-    print("*******************************************************get_booking")
+    bookings_logger.debug("Getting booking chat" , extra={"booking_id": booking_id , "chat_token": chat_token })
     booking = (
         db.query(BookingRequest)
         .options(
@@ -313,13 +336,12 @@ async def get_booking(
     )
 
     if not booking:
+        bookings_logger.error("Booking not found or chat token does not match" , extra={"booking_id": booking_id , "chat_token": chat_token})
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Booking not found or chat token does not match"
         )
-
-    
-   
+    bookings_logger.debug("Booking chat fetched successfully" , extra={"booking_id": booking_id , "chat_token": chat_token})
     resp = BookingRequestResponse.model_validate(booking)
     return resp.model_copy(update={
         "artist_stage_name": booking.artist.stage_name if booking.artist else None,
@@ -343,9 +365,11 @@ async def update_booking_status(
     """
     Update booking status (only artist can update status)
     """
+    bookings_logger.debug("Updating booking status" , extra={"booking_id": booking_id , "status_update": status_update , "current_user_id": current_user.id})
     booking = db.query(BookingRequest).filter(BookingRequest.id == booking_id).first()
     
     if not booking:
+        bookings_logger.error("Booking not found" , extra={"booking_id": booking_id , "status_update": status_update , "current_user_id": current_user.id})
         raise HTTPException(
             status_code=404,
             detail="Booking not found"
@@ -353,6 +377,7 @@ async def update_booking_status(
     
     # Only the artist can update booking status
     if booking.artist_id != current_user.id:
+        bookings_logger.error("You can only update your own bookings" , extra={"booking_id": booking_id , "status_update": status_update , "current_user_id": current_user.id})
         raise HTTPException(
             status_code=403,
             detail="Only the artist can update booking status"
@@ -373,8 +398,7 @@ async def update_booking_status(
     db.commit()
     db.refresh(booking)
     
-    logger.info(f"Booking {booking_id} status updated to {status_update.status}")
-    
+    bookings_logger.debug("Booking status updated successfully" , extra={"booking_id": booking_id , "status_update": status_update , "current_user_id": current_user.id})
     return booking
 
 @router.delete("/{booking_id}", status_code=204)

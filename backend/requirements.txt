@@ -1,5 +1,6 @@
 fastapi
 uvicorn[standard]
+gunicorn
 sqlalchemy
 alembic
 psycopg2-binary
@@ -16,3 +17,5 @@ google-api-python-client
 requests
 jinja2
 weasyprint
+python-dotenv
+pydantic-settings

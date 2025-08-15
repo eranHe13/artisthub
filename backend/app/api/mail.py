@@ -1,5 +1,5 @@
 from jinja2 import Environment, FileSystemLoader
-from weasyprint import HTML
+#from weasyprint import HTML
 from io import BytesIO
 from datetime import datetime
 import os
@@ -13,8 +13,7 @@ import base64
 import logging
 
 # Setup logging
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+mail_logger = logging.getLogger("app.mail")
 
 load_dotenv()
 CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
@@ -24,7 +23,7 @@ SENDER_EMAIL = os.getenv("GMAIL_SENDER")
 
 
 def generate_pdf_in_memory(artist_name: str, booking_details: dict, chat_url: str) -> BytesIO:
-    print("accesing generate_pdf_in_memory")
+    mail_logger.debug("Generating PDF in memory" , extra={"artist_name": artist_name , "booking_details": booking_details , "chat_url": chat_url})
     # הגדרת תיקיית התבניות
     template_folder = os.path.join(os.path.dirname(__file__), "../assest")
     env = Environment(loader=FileSystemLoader(template_folder))
@@ -53,7 +52,7 @@ def generate_pdf_in_memory(artist_name: str, booking_details: dict, chat_url: st
     # filename = f"booking_summary_{now.strftime('%Y%m%d_%H%M%S')}.pdf"
     # output_path = os.path.join(template_folder, filename)
     # HTML(string=html_content).write_pdf(output_path)
-
+    mail_logger.debug("PDF generated successfully" , extra={"pdf_io": pdf_io})
     return pdf_io
 
 
@@ -77,7 +76,7 @@ def send_pdf_via_gmail(to_email: str, subject: str, body: str, pdf_content: byte
         Exception: אם השליחה נכשלה
     """
     try:
-        logger.info(f"Sending email to: {to_email}")
+        mail_logger.debug("Sending email to: {to_email}" , extra={"to_email": to_email})
         
         # בדיקת משתנים נדרשים
         if not all([CLIENT_ID, CLIENT_SECRET, REFRESH_TOKEN, SENDER_EMAIL]):
@@ -112,11 +111,13 @@ def send_pdf_via_gmail(to_email: str, subject: str, body: str, pdf_content: byte
             body={'raw': raw_message}
         ).execute()
         
-        logger.info(f"Email sent successfully. Message ID: {send_message['id']}")
+        mail_logger.debug("Email sent successfully" , extra={"send_message": send_message})
         return send_message['id']
         
     except Exception as e:
-        logger.error(f"Failed to send email to {to_email}: {str(e)}")
+        mail_logger.exception("Failed to send email", extra={"to_email": to_email})
+
+        mail_logger.error("Failed to send email" , extra={"to_email": to_email , "error": e})
         raise
 
 def send_booking_confirmation_email(
@@ -141,8 +142,7 @@ def send_booking_confirmation_email(
         Exception: אם יצירת הPDF או השליחה נכשלה
     """
     try:
-        logger.info(f"Generating booking confirmation for artist: {artist_name}")
-        
+        mail_logger.debug("Sending booking confirmation email" , extra={"artist_name": artist_name , "booking_details": booking_details , "client_email": client_email , "chat_url": chat_url})
         # יצירת PDF בזיכרון
         pdf_io = generate_pdf_in_memory(
             artist_name=artist_name,
@@ -177,11 +177,12 @@ ArtistryHub Team
             pdf_filename=filename
         )
         
-        logger.info(f"Booking confirmation sent to {client_email}")
+        mail_logger.debug("Booking confirmation sent to {client_email}" , extra={"client_email": client_email})
         return message_id
         
     except Exception as e:
-        logger.error(f"Failed to send booking confirmation: {str(e)}")
+        mail_logger.exception("Failed to send booking confirmation", extra={"client_email": client_email   , "error": e})
+        mail_logger.error("Failed to send booking confirmation" , extra={"client_email": client_email , "error": e})
         raise
 
 

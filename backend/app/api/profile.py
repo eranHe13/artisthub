@@ -12,6 +12,9 @@ from app.core.db import get_db
 from app.models.models import ArtistProfile, User, BookingRequest
 from app.schemas.auth import ArtistProfileUpdate, ArtistProfileOut, ArtistDashboardResponse, BookingRequestResponse  , ArtistDashboardStats
 from app.api.auth import get_current_user
+import logging
+
+profile_logger = logging.getLogger("app.profile")
 router = APIRouter()
 
 
@@ -21,15 +24,18 @@ async def get_artist_profile(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    profile_logger.debug("Getting artist profile" , extra={"current_user_id": current_user.id})
     profile = (
         db.query(ArtistProfile)
           .filter(ArtistProfile.user_id == current_user.id)
           .first()
     )
     if profile is None:
+        profile_logger.error("Profile not found" , extra={"current_user_id": current_user.id})
         raise HTTPException(status_code=404, detail="Profile not found")
 
     # אפשר להחזיר את ה־ORM ישירות, ה־response_model ידאג להמרה (from_attributes=True)
+    profile_logger.debug("Profile fetched successfully" , extra={"profile": profile})
     return profile
 
 # עדיף מודל מפורש לסטטיסטיקות
@@ -40,6 +46,7 @@ async def get_artist_dashboard(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    profile_logger.debug("Getting artist dashboard" , extra={"current_user_id": current_user.id})
     try:
         # פרופיל אמן
         profile = db.query(ArtistProfile).filter(ArtistProfile.user_id == current_user.id).first()
@@ -109,7 +116,7 @@ async def get_artist_dashboard(
             created_at=profile.created_at,
             updated_at=profile.updated_at,
         )
-
+        profile_logger.debug("Artist dashboard fetched successfully" , extra={"profile_response": profile_response , "serialized_bookings": serialized_bookings , "stats": stats})
         # אפשר להחזיר את האובייקט ישירות; אם עדיין יש שדה בעייתי, עטוף ב-jsonable_encoder
         return ArtistDashboardResponse(
             profile=profile_response,
@@ -127,6 +134,7 @@ async def get_artist_dashboard(
     except HTTPException:
         raise
     except Exception as e:
+        profile_logger.error("Error getting artist dashboard" , extra={"current_user_id": current_user.id , "error": e})
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 
@@ -142,6 +150,7 @@ async def update_artist_profile(
     db: Session = Depends(get_db)
 ):
     try:
+        profile_logger.debug("Updating artist profile" , extra={"current_user_id": current_user.id})
         profile = db.query(ArtistProfile).filter(ArtistProfile.user_id == current_user.id).first()
         if not profile:
             profile = ArtistProfile(user_id=current_user.id)
@@ -164,8 +173,10 @@ async def update_artist_profile(
 
         db.commit()
         db.refresh(profile)
+        profile_logger.debug("Artist profile updated successfully" , extra={"profile": profile})
         return profile
     except Exception as e:
+        profile_logger.error("Error updating artist profile" , extra={"current_user_id": current_user.id , "error": e})
         db.rollback()
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
@@ -184,7 +195,7 @@ async def submit_artist_form(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    print(stage_name, bio, genres, facebook, instagram, soundcloud, min_price, photo)
+    profile_logger.debug("Submitting artist form" , extra={"current_user_id": current_user.id})
     profile_in = ArtistProfileUpdate(
         stage_name=stage_name,
         bio=bio,
@@ -193,4 +204,5 @@ async def submit_artist_form(
         min_price=min_price,
         photo=photo
     )
+    profile_logger.debug("Artist form submitted successfully" , extra={"profile_in": profile_in})
     return await update_artist_profile(profile_in, current_user, db) 
